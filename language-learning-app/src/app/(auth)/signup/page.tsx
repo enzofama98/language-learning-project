@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -13,7 +14,7 @@ export default function RegisterPage() {
 
     const res = await fetch("/api/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, code }),
       headers: { "Content-Type": "application/json" },
     });
 
@@ -42,6 +43,14 @@ export default function RegisterPage() {
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="w-full border px-4 py-2"
+        />
+        <input
+          type="text"
+          placeholder="Codice"
+          required
+          value={code}
+          onChange={(e) => setCode(e.target.value)} 
           className="w-full border px-4 py-2"
         />
         <button
