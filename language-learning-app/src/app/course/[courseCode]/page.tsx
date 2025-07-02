@@ -39,6 +39,11 @@ interface Lesson {
   total_exercises: number;
 }
 
+interface SelectedOption {
+  value: string;
+  order: number;
+}
+
 export default function CoursePage() {
   const params = useParams();
   const router = useRouter();
@@ -54,13 +59,24 @@ export default function CoursePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [courseName, setCourseName] = useState<string>("");
-  const [userAnswer, setUserAnswer] = useState<string>("");
+
+  // Stati per le diverse tipologie di esercizi
+  const [selectedOptions, setSelectedOptions] = useState<SelectedOption[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     initializePage();
   }, [courseCode]);
+
+  useEffect(() => {
+    // Reset quando cambia esercizio
+    setSelectedOptions([]);
+    setShowResult(false);
+    setIsCorrect(false);
+    setIsPlaying(false);
+  }, [currentLessonIndex, currentExerciseIndex]);
 
   const initializePage = async () => {
     try {
@@ -213,36 +229,53 @@ export default function CoursePage() {
     return isCurrentExerciseCompleted() || (showResult && isCorrect);
   };
 
+  const handleOptionClick = (option: string) => {
+    if (showResult) return;
+
+    const existingIndex = selectedOptions.findIndex(
+      (opt) => opt.value === option
+    );
+
+    if (existingIndex !== -1) {
+      // Rimuovi se già selezionato
+      const newSelected = selectedOptions.filter((opt) => opt.value !== option);
+      // Ricalcola gli ordini
+      const reorderedSelected = newSelected.map((opt, index) => ({
+        ...opt,
+        order: index + 1,
+      }));
+      setSelectedOptions(reorderedSelected);
+    } else {
+      // Aggiungi alla fine
+      const newOrder = selectedOptions.length + 1;
+      setSelectedOptions([
+        ...selectedOptions,
+        { value: option, order: newOrder },
+      ]);
+    }
+  };
+
   const handleSubmitAnswer = async () => {
     const exercise = getCurrentExercise();
     if (!exercise || !user) return;
 
-    // Validazione della risposta
     let correct = false;
 
-    switch (exercise.tipo_validazione.toLowerCase()) {
-      case "exact":
-        correct =
-          userAnswer.trim().toLowerCase() === exercise.soluzione.toLowerCase();
+    switch (exercise.tipo_esercizio.toLowerCase()) {
+      case "traduci":
+        correct = validateTraduci(exercise);
         break;
-      case "contains":
-        correct = userAnswer
-          .toLowerCase()
-          .includes(exercise.soluzione.toLowerCase());
+      case "completa la frase":
+        correct = validateCompletaFrase(exercise);
         break;
-      case "regex":
-        try {
-          const regex = new RegExp(exercise.soluzione, "i");
-          correct = regex.test(userAnswer);
-        } catch {
-          correct =
-            userAnswer.trim().toLowerCase() ===
-            exercise.soluzione.toLowerCase();
-        }
+      case "seleziona ciò che senti":
+        correct = validateSelezionaCheState(exercise);
+        break;
+      case "seleziona le coppie":
+        correct = validateSelezionaCoppie(exercise);
         break;
       default:
-        correct =
-          userAnswer.trim().toLowerCase() === exercise.soluzione.toLowerCase();
+        correct = false;
     }
 
     setIsCorrect(correct);
@@ -251,6 +284,58 @@ export default function CoursePage() {
     // Se corretto, marca come completato
     if (correct) {
       await markExerciseCompleted(exercise.id);
+    }
+  };
+
+  const validateTraduci = (exercise: Exercise): boolean => {
+    const userAnswer = selectedOptions
+      .sort((a, b) => a.order - b.order)
+      .map((opt) => opt.value)
+      .join(" ");
+
+    return userAnswer.toLowerCase() === exercise.soluzione.toLowerCase();
+  };
+
+  const validateCompletaFrase = (exercise: Exercise): boolean => {
+    return (
+      selectedOptions.length === 1 &&
+      selectedOptions[0].value.toLowerCase() ===
+        exercise.soluzione.toLowerCase()
+    );
+  };
+
+  const validateSelezionaCheState = (exercise: Exercise): boolean => {
+    const userAnswer = selectedOptions
+      .sort((a, b) => a.order - b.order)
+      .map((opt) => opt.value)
+      .join(" ");
+
+    return userAnswer.toLowerCase() === exercise.soluzione.toLowerCase();
+  };
+
+  const validateSelezionaCoppie = (exercise: Exercise): boolean => {
+    try {
+      const correctPairs = JSON.parse(exercise.soluzione);
+      const userPairs: { [key: string]: string } = {};
+
+      // Assumi che le opzioni selezionate siano in coppie (inglese, italiano)
+      for (let i = 0; i < selectedOptions.length; i += 2) {
+        if (i + 1 < selectedOptions.length) {
+          const first = selectedOptions.find(
+            (opt) => opt.order === i + 1
+          )?.value;
+          const second = selectedOptions.find(
+            (opt) => opt.order === i + 2
+          )?.value;
+          if (first && second) {
+            userPairs[first] = second;
+          }
+        }
+      }
+
+      return JSON.stringify(userPairs) === JSON.stringify(correctPairs);
+    } catch {
+      return false;
     }
   };
 
@@ -278,34 +363,18 @@ export default function CoursePage() {
 
     const currentLesson = lessons[currentLessonIndex];
 
-    // Reset form
-    setUserAnswer("");
-    setShowResult(false);
-    setIsCorrect(false);
-
-    // Se ci sono altri esercizi nella lezione corrente
     if (currentExerciseIndex < currentLesson.exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
-    }
-    // Altrimenti vai alla prossima lezione
-    else if (currentLessonIndex < lessons.length - 1) {
+    } else if (currentLessonIndex < lessons.length - 1) {
       setCurrentLessonIndex(currentLessonIndex + 1);
       setCurrentExerciseIndex(0);
     }
   };
 
   const goToPreviousExercise = () => {
-    // Reset form
-    setUserAnswer("");
-    setShowResult(false);
-    setIsCorrect(false);
-
-    // Se non siamo al primo esercizio della lezione
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex(currentExerciseIndex - 1);
-    }
-    // Altrimenti vai alla lezione precedente (ultimo esercizio)
-    else if (currentLessonIndex > 0) {
+    } else if (currentLessonIndex > 0) {
       setCurrentLessonIndex(currentLessonIndex - 1);
       setCurrentExerciseIndex(
         lessons[currentLessonIndex - 1].exercises.length - 1
@@ -345,6 +414,301 @@ export default function CoursePage() {
     });
 
     return { current, total };
+  };
+
+  const renderExerciseContent = () => {
+    const exercise = getCurrentExercise();
+    if (!exercise) return null;
+
+    const exerciseData = exercise.opzionali || {};
+
+    switch (exercise.tipo_esercizio.toLowerCase()) {
+      case "traduci":
+        return renderTraduciExercise(exercise, exerciseData);
+      case "completa la frase":
+        return renderCompletaFraseExercise(exercise, exerciseData);
+      case "seleziona ciò che senti":
+        return renderSelezionaCheStateExercise(exercise, exerciseData);
+      case "seleziona le coppie":
+        return renderSelezionaCoppieExercise(exercise, exerciseData);
+      default:
+        return (
+          <div className="text-red-500">Tipo di esercizio non supportato</div>
+        );
+    }
+  };
+
+  const renderTraduciExercise = (exercise: Exercise, data: any) => {
+    const bancaParole = data.banca_parole || [];
+
+    return (
+      <div>
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+          <p className="text-blue-800 font-medium">Frase da tradurre:</p>
+          <p className="text-blue-900 text-lg font-semibold mt-2">
+            "{exercise.frase}"
+          </p>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="font-medium text-gray-700 mb-3">
+            Trascina le parole per formare la traduzione:
+          </h3>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {bancaParole.map((parola: string, index: number) => {
+              const isSelected = selectedOptions.some(
+                (opt) => opt.value === parola
+              );
+              const selectedOrder = selectedOptions.find(
+                (opt) => opt.value === parola
+              )?.order;
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleOptionClick(parola)}
+                  disabled={showResult}
+                  className={`px-3 py-2 rounded-md border transition-all duration-200 ${
+                    isSelected
+                      ? "bg-blue-500 text-white border-blue-600 shadow-md"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50"
+                  } ${
+                    showResult
+                      ? "cursor-not-allowed opacity-75"
+                      : "cursor-pointer"
+                  }`}
+                >
+                  {parola}
+                  {isSelected && (
+                    <span className="ml-1 bg-blue-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center inline-flex">
+                      {selectedOrder}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedOptions.length > 0 && (
+            <div className="bg-gray-50 p-3 rounded border">
+              <p className="text-sm text-gray-600 mb-1">Traduzione:</p>
+              <p className="font-medium">
+                {selectedOptions
+                  .sort((a, b) => a.order - b.order)
+                  .map((opt) => opt.value)
+                  .join(" ")}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCompletaFraseExercise = (exercise: Exercise, data: any) => {
+    const opzioni = data.opzioni || [];
+
+    return (
+      <div>
+        <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+          <p className="text-green-800 font-medium">Completa la frase:</p>
+          <p className="text-green-900 text-lg font-semibold mt-2">
+            "{exercise.frase}"
+          </p>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="font-medium text-gray-700 mb-3">
+            Seleziona la parola corretta:
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            {opzioni.map((opzione: string, index: number) => {
+              const isSelected = selectedOptions.some(
+                (opt) => opt.value === opzione
+              );
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => {
+                    // Per questo tipo, solo una selezione
+                    setSelectedOptions([{ value: opzione, order: 1 }]);
+                  }}
+                  disabled={showResult}
+                  className={`p-3 rounded-md border transition-all duration-200 ${
+                    isSelected
+                      ? "bg-green-500 text-white border-green-600 shadow-md"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-green-400 hover:bg-green-50"
+                  } ${
+                    showResult
+                      ? "cursor-not-allowed opacity-75"
+                      : "cursor-pointer"
+                  }`}
+                >
+                  {opzione}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSelezionaCheStateExercise = (exercise: Exercise, data: any) => {
+    const bancaParole = data.banca_parole || [];
+    const audioUrl = data.audio_url || "";
+
+    return (
+      <div>
+        <div className="bg-purple-50 border-l-4 border-purple-400 p-4 mb-6">
+          <p className="text-purple-800 font-medium">
+            Ascolta l'audio e forma la frase:
+          </p>
+          <div className="flex items-center gap-3 mt-3">
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-full"
+            >
+              {isPlaying ? "⏸️" : "▶️"}
+            </button>
+            <span className="text-purple-700">Clicca per ascoltare</span>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="font-medium text-gray-700 mb-3">
+            Seleziona le parole nell'ordine corretto:
+          </h3>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {bancaParole.map((parola: string, index: number) => {
+              const isSelected = selectedOptions.some(
+                (opt) => opt.value === parola
+              );
+              const selectedOrder = selectedOptions.find(
+                (opt) => opt.value === parola
+              )?.order;
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleOptionClick(parola)}
+                  disabled={showResult}
+                  className={`px-3 py-2 rounded-md border transition-all duration-200 ${
+                    isSelected
+                      ? "bg-purple-500 text-white border-purple-600 shadow-md"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-purple-400 hover:bg-purple-50"
+                  } ${
+                    showResult
+                      ? "cursor-not-allowed opacity-75"
+                      : "cursor-pointer"
+                  }`}
+                >
+                  {parola}
+                  {isSelected && (
+                    <span className="ml-1 bg-purple-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center inline-flex">
+                      {selectedOrder}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedOptions.length > 0 && (
+            <div className="bg-gray-50 p-3 rounded border">
+              <p className="text-sm text-gray-600 mb-1">Frase formata:</p>
+              <p className="font-medium">
+                {selectedOptions
+                  .sort((a, b) => a.order - b.order)
+                  .map((opt) => opt.value)
+                  .join(" ")}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSelezionaCoppieExercise = (exercise: Exercise, data: any) => {
+    const coppie = data.coppie_mischiate || [];
+
+    return (
+      <div>
+        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">
+          <p className="text-orange-800 font-medium">
+            Abbina ogni parola inglese alla sua traduzione italiana:
+          </p>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="font-medium text-gray-700 mb-3">
+            Seleziona le coppie nell'ordine corretto:
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {coppie.map((parola: string, index: number) => {
+              const isSelected = selectedOptions.some(
+                (opt) => opt.value === parola
+              );
+              const selectedOrder = selectedOptions.find(
+                (opt) => opt.value === parola
+              )?.order;
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleOptionClick(parola)}
+                  disabled={showResult}
+                  className={`p-3 rounded-md border transition-all duration-200 ${
+                    isSelected
+                      ? "bg-orange-500 text-white border-orange-600 shadow-md"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-orange-400 hover:bg-orange-50"
+                  } ${
+                    showResult
+                      ? "cursor-not-allowed opacity-75"
+                      : "cursor-pointer"
+                  }`}
+                >
+                  {parola}
+                  {isSelected && (
+                    <span className="ml-1 bg-orange-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center inline-flex">
+                      {selectedOrder}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedOptions.length > 0 && (
+            <div className="bg-gray-50 p-3 rounded border">
+              <p className="text-sm text-gray-600 mb-1">Coppie selezionate:</p>
+              <div className="space-y-1">
+                {selectedOptions
+                  .sort((a, b) => a.order - b.order)
+                  .reduce((pairs, opt, index) => {
+                    if (index % 2 === 0) {
+                      const nextOpt = selectedOptions.sort(
+                        (a, b) => a.order - b.order
+                      )[index + 1];
+                      if (nextOpt) {
+                        pairs.push(`${opt.value} ↔ ${nextOpt.value}`);
+                      }
+                    }
+                    return pairs;
+                  }, [] as string[])
+                  .map((pair, index) => (
+                    <p key={index} className="font-medium">
+                      {pair}
+                    </p>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -467,46 +831,21 @@ export default function CoursePage() {
             </h2>
 
             {currentExercise.descrizione && (
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 mb-6">
                 {currentExercise.descrizione}
               </p>
             )}
 
-            {currentExercise.frase && (
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-                <p className="text-blue-800 font-mono">
-                  {currentExercise.frase}
-                </p>
-              </div>
-            )}
-
-            {/* Answer Input */}
-            <div className="mb-6">
-              <label
-                htmlFor="answer"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                La tua risposta:
-              </label>
-              <textarea
-                id="answer"
-                value={userAnswer}
-                onChange={(e) => setUserAnswer(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={4}
-                placeholder="Scrivi qui la tua risposta..."
-                disabled={showResult && isCorrect}
-              />
-            </div>
+            {renderExerciseContent()}
 
             {/* Submit Button */}
             {!showResult && (
               <button
                 onClick={handleSubmitAnswer}
-                disabled={!userAnswer.trim()}
+                disabled={selectedOptions.length === 0}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-md transition-colors duration-200"
               >
-                Verifica Risposta
+                Controlla
               </button>
             )}
 
@@ -549,7 +888,7 @@ export default function CoursePage() {
                   <button
                     onClick={() => {
                       setShowResult(false);
-                      setUserAnswer("");
+                      setSelectedOptions([]);
                     }}
                     className="mt-3 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
                   >
