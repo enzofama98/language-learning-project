@@ -1,30 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-// Tipi TypeScript basati sulla struttura della tabella anagrafica_esercizi
 interface Exercise {
   id: string;
+  language_code: string;
   lezione: number;
   text: string;
   tipo_esercizio: string;
-  descrizione: string;
-  frase: string;
-  opzionali: any; // JSON field
-  tipo_validazione: string;
+  descrizione?: string;
+  frase?: string;
+  opzionali: any;
   soluzione: string;
-  validazione: any; // JSON field
-  created_at: string;
-}
-
-interface ExerciseProgress {
-  id: string;
-  user_id: string;
-  exercise_id: string;
-  completed: boolean;
-  completed_at?: string;
+  validazione: any;
 }
 
 interface User {
@@ -43,6 +33,69 @@ interface SelectedOption {
   value: string;
   order: number;
 }
+
+interface SelectedPair {
+  pairId: number;
+  words: string[];
+  colorIndex: number;
+}
+
+interface PendingSelection {
+  word: string;
+  colorIndex: number;
+}
+
+// Colori disponibili per le coppie
+const PAIR_COLORS = [
+  {
+    bg: "bg-red-500",
+    border: "border-red-600",
+    hover: "hover:bg-red-50",
+    hoverBorder: "hover:border-red-400",
+  },
+  {
+    bg: "bg-blue-500",
+    border: "border-blue-600",
+    hover: "hover:bg-blue-50",
+    hoverBorder: "hover:border-blue-400",
+  },
+  {
+    bg: "bg-green-500",
+    border: "border-green-600",
+    hover: "hover:bg-green-50",
+    hoverBorder: "hover:border-green-400",
+  },
+  {
+    bg: "bg-purple-500",
+    border: "border-purple-600",
+    hover: "hover:bg-purple-50",
+    hoverBorder: "hover:border-purple-400",
+  },
+  {
+    bg: "bg-yellow-500",
+    border: "border-yellow-600",
+    hover: "hover:bg-yellow-50",
+    hoverBorder: "hover:border-yellow-400",
+  },
+  {
+    bg: "bg-pink-500",
+    border: "border-pink-600",
+    hover: "hover:bg-pink-50",
+    hoverBorder: "hover:border-pink-400",
+  },
+  {
+    bg: "bg-indigo-500",
+    border: "border-indigo-600",
+    hover: "hover:bg-indigo-50",
+    hoverBorder: "hover:border-indigo-400",
+  },
+  {
+    bg: "bg-teal-500",
+    border: "border-teal-600",
+    hover: "hover:bg-teal-50",
+    hoverBorder: "hover:border-teal-400",
+  },
+];
 
 export default function CoursePage() {
   const params = useParams();
@@ -66,17 +119,28 @@ export default function CoursePage() {
   const [isCorrect, setIsCorrect] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Stati specifici per "Seleziona le coppie"
+  const [selectedPairs, setSelectedPairs] = useState<SelectedPair[]>([]);
+  const [pendingSelection, setPendingSelection] =
+    useState<PendingSelection | null>(null);
+
   useEffect(() => {
     initializePage();
   }, [courseCode]);
 
   useEffect(() => {
     // Reset quando cambia esercizio
+    resetExerciseState();
+  }, [currentLessonIndex, currentExerciseIndex]);
+
+  const resetExerciseState = () => {
     setSelectedOptions([]);
+    setSelectedPairs([]);
+    setPendingSelection(null);
     setShowResult(false);
     setIsCorrect(false);
     setIsPlaying(false);
-  }, [currentLessonIndex, currentExerciseIndex]);
+  };
 
   const initializePage = async () => {
     try {
@@ -138,12 +202,12 @@ export default function CoursePage() {
     try {
       const { data, error } = await supabase
         .from("anagrafica_codici")
-        .select("nome")
+        .select("titolo")
         .eq("codice", courseCode.toUpperCase())
         .single();
 
       if (!error && data) {
-        setCourseName(data.nome);
+        setCourseName(data.titolo);
       }
     } catch (err) {
       console.error("Errore caricamento info corso:", err);
@@ -157,58 +221,48 @@ export default function CoursePage() {
         .from("anagrafica_esercizi")
         .select("*")
         .eq("language_code", courseCode.toUpperCase())
-        .order("lezione, created_at");
+        .eq("active", true)
+        .order("lezione", { ascending: true })
+        .order("created_at", { ascending: true });
 
-      if (exercisesError) {
-        throw exercisesError;
-      }
+      if (exercisesError) throw exercisesError;
 
-      // Carica progresso utente
+      // Carica progresso
       const { data: progress, error: progressError } = await supabase
         .from("exercise_progress")
         .select("exercise_id, completed")
         .eq("user_id", userId);
 
-      if (progressError) {
-        console.warn("Errore caricamento progresso:", progressError);
-      }
+      if (progressError) throw progressError;
 
-      // Crea mappa del progresso
-      const progressMap = new Map<string, boolean>();
-      progress?.forEach((p) => {
-        progressMap.set(p.exercise_id, p.completed);
-      });
-      setExerciseProgress(progressMap);
+      // Organizza per lezioni
+      const progressMap = new Map(
+        progress?.map((p) => [p.exercise_id, p.completed]) || []
+      );
 
-      // Raggruppa esercizi per lezione
-      const lessonGroups = new Map<number, Exercise[]>();
-      exercises?.forEach((exercise) => {
-        const lesson = exercise.lezione;
-        if (!lessonGroups.has(lesson)) {
-          lessonGroups.set(lesson, []);
+      const lessonMap = new Map<number, Exercise[]>();
+      exercises?.forEach((ex) => {
+        if (!lessonMap.has(ex.lezione)) {
+          lessonMap.set(ex.lezione, []);
         }
-        lessonGroups.get(lesson)!.push(exercise);
+        lessonMap.get(ex.lezione)!.push(ex);
       });
 
-      // Converti in array di lezioni
-      const lessonsArray: Lesson[] = Array.from(lessonGroups.entries())
+      const lessonsArray: Lesson[] = Array.from(lessonMap.entries())
         .sort(([a], [b]) => a - b)
-        .map(([lessonNumber, exercises]) => {
-          const completedCount = exercises.filter((ex) =>
-            progressMap.get(ex.id)
-          ).length;
-          return {
-            lesson_number: lessonNumber,
-            exercises,
-            completed_exercises: completedCount,
-            total_exercises: exercises.length,
-          };
-        });
+        .map(([lessonNum, exs]) => ({
+          lesson_number: lessonNum,
+          exercises: exs,
+          completed_exercises: exs.filter((ex) => progressMap.get(ex.id))
+            .length,
+          total_exercises: exs.length,
+        }));
 
       setLessons(lessonsArray);
+      setExerciseProgress(progressMap);
     } catch (err) {
       console.error("Errore caricamento esercizi:", err);
-      setError("Errore nel caricamento degli esercizi");
+      throw err;
     }
   };
 
@@ -220,13 +274,28 @@ export default function CoursePage() {
     return currentLesson.exercises[currentExerciseIndex];
   };
 
+  const getCurrentProgress = () => {
+    const totalExercises = lessons.reduce(
+      (sum, lesson) => sum + lesson.total_exercises,
+      0
+    );
+    const completedExercises = Array.from(exerciseProgress.values()).filter(
+      Boolean
+    ).length;
+    return { completed: completedExercises, total: totalExercises };
+  };
+
   const isCurrentExerciseCompleted = (): boolean => {
     const exercise = getCurrentExercise();
     return exercise ? exerciseProgress.get(exercise.id) || false : false;
   };
 
   const canMoveToNext = (): boolean => {
-    return isCurrentExerciseCompleted() || (showResult && isCorrect);
+    const currentLesson = lessons[currentLessonIndex];
+    const hasNextExercise =
+      currentExerciseIndex < currentLesson.exercises.length - 1;
+    const hasNextLesson = currentLessonIndex < lessons.length - 1;
+    return hasNextExercise || hasNextLesson;
   };
 
   const handleOptionClick = (option: string) => {
@@ -253,6 +322,69 @@ export default function CoursePage() {
         { value: option, order: newOrder },
       ]);
     }
+  };
+
+  // Gestione specifica per "Seleziona le coppie"
+  const handleWordClick = (word: string) => {
+    if (showResult) return;
+
+    // Controlla se la parola è già selezionata in una coppia
+    const existingPair = selectedPairs.find((pair) =>
+      pair.words.includes(word)
+    );
+    if (existingPair) {
+      // Rimuovi la coppia esistente
+      setSelectedPairs((prev) =>
+        prev.filter((pair) => pair.pairId !== existingPair.pairId)
+      );
+      setPendingSelection(null);
+      return;
+    }
+
+    // Controlla se la parola è la selezione in sospeso
+    if (pendingSelection && pendingSelection.word === word) {
+      // Cancella la selezione in sospeso
+      setPendingSelection(null);
+      return;
+    }
+
+    // Se non c'è una selezione in sospeso, inizia una nuova coppia
+    if (!pendingSelection) {
+      const nextColorIndex = selectedPairs.length % PAIR_COLORS.length;
+      setPendingSelection({
+        word: word,
+        colorIndex: nextColorIndex,
+      });
+      return;
+    }
+
+    // Completa la coppia
+    const newPair: SelectedPair = {
+      pairId: Date.now(), // ID univoco per la coppia
+      words: [pendingSelection.word, word],
+      colorIndex: pendingSelection.colorIndex,
+    };
+
+    setSelectedPairs((prev) => [...prev, newPair]);
+    setPendingSelection(null);
+  };
+
+  const getWordStyle = (word: string) => {
+    // Controlla se la parola è in una coppia completata
+    const pair = selectedPairs.find((p) => p.words.includes(word));
+    if (pair) {
+      const color = PAIR_COLORS[pair.colorIndex];
+      return `${color.bg} text-white ${color.border} shadow-md`;
+    }
+
+    // Controlla se è la selezione in sospeso
+    if (pendingSelection && pendingSelection.word === word) {
+      const color = PAIR_COLORS[pendingSelection.colorIndex];
+      return `${color.bg} text-white ${color.border} shadow-md animate-pulse`;
+    }
+
+    // Stile di default
+    return "bg-white text-gray-700 border-gray-300 hover:border-orange-400 hover:bg-orange-50";
   };
 
   const handleSubmitAnswer = async () => {
@@ -287,6 +419,10 @@ export default function CoursePage() {
     }
   };
 
+  const handleRetryExercise = () => {
+    resetExerciseState();
+  };
+
   const validateTraduci = (exercise: Exercise): boolean => {
     const userAnswer = selectedOptions
       .sort((a, b) => a.order - b.order)
@@ -316,24 +452,28 @@ export default function CoursePage() {
   const validateSelezionaCoppie = (exercise: Exercise): boolean => {
     try {
       const correctPairs = JSON.parse(exercise.soluzione);
-      const userPairs: { [key: string]: string } = {};
 
-      // Assumi che le opzioni selezionate siano in coppie (inglese, italiano)
-      for (let i = 0; i < selectedOptions.length; i += 2) {
-        if (i + 1 < selectedOptions.length) {
-          const first = selectedOptions.find(
-            (opt) => opt.order === i + 1
-          )?.value;
-          const second = selectedOptions.find(
-            (opt) => opt.order === i + 2
-          )?.value;
-          if (first && second) {
-            userPairs[first] = second;
-          }
-        }
+      // Converte le coppie selezionate in un formato confrontabile
+      const userPairsSets = selectedPairs.map((pair) => new Set(pair.words));
+
+      // Converte le coppie corrette in set per il confronto
+      const correctPairsSets = Object.entries(correctPairs).map(
+        ([key, value]) => new Set([key, value as string])
+      );
+
+      // Controlla se abbiamo lo stesso numero di coppie
+      if (userPairsSets.length !== correctPairsSets.length) {
+        return false;
       }
 
-      return JSON.stringify(userPairs) === JSON.stringify(correctPairs);
+      // Controlla se ogni coppia utente corrisponde a una coppia corretta
+      return userPairsSets.every((userSet) =>
+        correctPairsSets.some(
+          (correctSet) =>
+            userSet.size === correctSet.size &&
+            [...userSet].every((word) => correctSet.has(word))
+        )
+      );
     } catch {
       return false;
     }
@@ -359,10 +499,7 @@ export default function CoursePage() {
   };
 
   const goToNextExercise = () => {
-    if (!canMoveToNext()) return;
-
     const currentLesson = lessons[currentLessonIndex];
-
     if (currentExerciseIndex < currentLesson.exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
     } else if (currentLessonIndex < lessons.length - 1) {
@@ -376,50 +513,25 @@ export default function CoursePage() {
       setCurrentExerciseIndex(currentExerciseIndex - 1);
     } else if (currentLessonIndex > 0) {
       setCurrentLessonIndex(currentLessonIndex - 1);
-      setCurrentExerciseIndex(
-        lessons[currentLessonIndex - 1].exercises.length - 1
-      );
+      const prevLesson = lessons[currentLessonIndex - 1];
+      setCurrentExerciseIndex(prevLesson.exercises.length - 1);
     }
   };
 
-  const isAtFirstExercise = (): boolean => {
-    return currentLessonIndex === 0 && currentExerciseIndex === 0;
+  const hasAnswerSelected = () => {
+    const currentExercise = getCurrentExercise();
+    if (!currentExercise) return false;
+
+    if (
+      currentExercise.tipo_esercizio.toLowerCase() === "seleziona le coppie"
+    ) {
+      return selectedPairs.length > 0;
+    } else {
+      return selectedOptions.length > 0;
+    }
   };
 
-  const isAtLastExercise = (): boolean => {
-    if (lessons.length === 0) return true;
-    const lastLessonIndex = lessons.length - 1;
-    const lastExerciseIndex = lessons[lastLessonIndex].exercises.length - 1;
-    return (
-      currentLessonIndex === lastLessonIndex &&
-      currentExerciseIndex === lastExerciseIndex
-    );
-  };
-
-  const getCurrentProgress = (): { current: number; total: number } => {
-    let total = 0;
-    let current = 0;
-
-    lessons.forEach((lesson, lessonIdx) => {
-      lesson.exercises.forEach((exercise, exerciseIdx) => {
-        total++;
-        if (
-          lessonIdx < currentLessonIndex ||
-          (lessonIdx === currentLessonIndex &&
-            exerciseIdx <= currentExerciseIndex)
-        ) {
-          current++;
-        }
-      });
-    });
-
-    return { current, total };
-  };
-
-  const renderExerciseContent = () => {
-    const exercise = getCurrentExercise();
-    if (!exercise) return null;
-
+  const renderExercise = (exercise: Exercise) => {
     const exerciseData = exercise.opzionali || {};
 
     switch (exercise.tipo_esercizio.toLowerCase()) {
@@ -640,71 +752,130 @@ export default function CoursePage() {
           <p className="text-orange-800 font-medium">
             Abbina ogni parola inglese alla sua traduzione italiana:
           </p>
+          <p className="text-orange-700 text-sm mt-2">
+            Clicca due parole per formare una coppia. Ogni coppia avrà un colore
+            diverso.
+          </p>
         </div>
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            Seleziona le coppie nell'ordine corretto:
+            Seleziona le coppie - ogni coppia avrà un colore diverso:
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {coppie.map((parola: string, index: number) => {
-              const isSelected = selectedOptions.some(
-                (opt) => opt.value === parola
-              );
-              const selectedOrder = selectedOptions.find(
-                (opt) => opt.value === parola
-              )?.order;
 
+          {/* Griglia delle parole */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+            {coppie.map((parola: string, index: number) => {
               return (
                 <button
                   key={index}
-                  onClick={() => handleOptionClick(parola)}
+                  onClick={() => handleWordClick(parola)}
                   disabled={showResult}
-                  className={`p-3 rounded-md border transition-all duration-200 ${
-                    isSelected
-                      ? "bg-orange-500 text-white border-orange-600 shadow-md"
-                      : "bg-white text-gray-700 border-gray-300 hover:border-orange-400 hover:bg-orange-50"
-                  } ${
+                  className={`p-3 rounded-md border transition-all duration-200 ${getWordStyle(
+                    parola
+                  )} ${
                     showResult
                       ? "cursor-not-allowed opacity-75"
                       : "cursor-pointer"
                   }`}
                 >
                   {parola}
-                  {isSelected && (
-                    <span className="ml-1 bg-orange-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center inline-flex">
-                      {selectedOrder}
-                    </span>
-                  )}
                 </button>
               );
             })}
           </div>
 
-          {selectedOptions.length > 0 && (
-            <div className="bg-gray-50 p-3 rounded border">
-              <p className="text-sm text-gray-600 mb-1">Coppie selezionate:</p>
-              <div className="space-y-1">
-                {selectedOptions
-                  .sort((a, b) => a.order - b.order)
-                  .reduce((pairs, opt, index) => {
-                    if (index % 2 === 0) {
-                      const nextOpt = selectedOptions.sort(
-                        (a, b) => a.order - b.order
-                      )[index + 1];
-                      if (nextOpt) {
-                        pairs.push(`${opt.value} ↔ ${nextOpt.value}`);
-                      }
-                    }
-                    return pairs;
-                  }, [] as string[])
-                  .map((pair, index) => (
-                    <p key={index} className="font-medium">
-                      {pair}
-                    </p>
-                  ))}
+          {/* Visualizzazione delle coppie selezionate */}
+          {selectedPairs.length > 0 && (
+            <div className="bg-gray-50 p-4 rounded border">
+              <p className="text-sm text-gray-600 mb-3">Coppie selezionate:</p>
+              <div className="space-y-2">
+                {selectedPairs.map((pair) => {
+                  const color = PAIR_COLORS[pair.colorIndex];
+                  return (
+                    <div
+                      key={pair.pairId}
+                      className={`flex items-center justify-between p-2 rounded ${color.bg} bg-opacity-10 border ${color.border} border-opacity-30`}
+                    >
+                      <span className="font-medium">
+                        {pair.words[0]} ↔ {pair.words[1]}
+                      </span>
+                      <div className={`w-4 h-4 rounded-full ${color.bg}`}></div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
+          )}
+
+          {/* Indicazione selezione in sospeso */}
+          {pendingSelection && (
+            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded mt-3">
+              <p className="text-yellow-800 text-sm">
+                Hai selezionato "<strong>{pendingSelection.word}</strong>".
+                Clicca su un'altra parola per completare la coppia.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderActionButtons = () => {
+    const exerciseCompleted = isCurrentExerciseCompleted();
+
+    return (
+      <div className="flex items-center justify-between">
+        <button
+          onClick={goToPreviousExercise}
+          disabled={currentLessonIndex === 0 && currentExerciseIndex === 0}
+          className="bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 px-4 py-2 rounded-md"
+        >
+          ← Precedente
+        </button>
+
+        <div className="flex gap-3">
+          {!showResult ? (
+            // Prima della verifica
+            <button
+              onClick={handleSubmitAnswer}
+              disabled={!hasAnswerSelected()}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md"
+            >
+              Verifica
+            </button>
+          ) : (
+            // Dopo la verifica
+            <div className="flex gap-3">
+              {!isCorrect && (
+                <button
+                  onClick={handleRetryExercise}
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
+                >
+                  🔄 Riprova
+                </button>
+              )}
+
+              {(isCorrect || exerciseCompleted) && canMoveToNext() && (
+                <button
+                  onClick={goToNextExercise}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+                >
+                  Avanti →
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Pulsante sempre disponibile per esercizi già completati */}
+          {exerciseCompleted && !showResult && canMoveToNext() && (
+            <button
+              onClick={goToNextExercise}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+            >
+              Avanti →
+            </button>
           )}
         </div>
       </div>
@@ -757,9 +928,9 @@ export default function CoursePage() {
           </p>
           <button
             onClick={() => router.push("/")}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
           >
-            Torna ai Corsi
+            Torna alla Home
           </button>
         </div>
       </div>
@@ -769,11 +940,11 @@ export default function CoursePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{courseName}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{courseName}</h1>
               <p className="text-sm text-gray-600">
                 Lezione {currentLesson.lesson_number} - Esercizio{" "}
                 {currentExerciseIndex + 1} di {currentLesson.exercises.length}
@@ -781,180 +952,158 @@ export default function CoursePage() {
             </div>
             <button
               onClick={() => router.push("/")}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition-colors duration-200"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md"
             >
-              Esci dal Corso
+              Esci
             </button>
           </div>
+        </div>
+      </div>
 
-          {/* Progress Bar */}
-          <div className="pb-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>Progresso Totale</span>
-              <span>
-                {progress.current} / {progress.total}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${(progress.current / progress.total) * 100}%`,
-                }}
-              ></div>
-            </div>
+      {/* Progress Bar */}
+      <div className="bg-white border-b">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Progresso Generale: {progress.completed}/{progress.total}
+            </span>
+            <span className="text-sm text-gray-600">
+              {Math.round((progress.completed / progress.total) * 100)}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{
+                width: `${(progress.completed / progress.total) * 100}%`,
+              }}
+            ></div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          {/* Exercise Status */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-500">
-                Tipo: {currentExercise.tipo_esercizio}
-              </span>
-              {isCurrentExerciseCompleted() && (
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                  ✓ Completato
-                </span>
-              )}
-            </div>
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Exercise Title */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+              {currentExercise.text}
+            </h2>
+            {currentExercise.descrizione && (
+              <p className="text-gray-600">{currentExercise.descrizione}</p>
+            )}
           </div>
 
           {/* Exercise Content */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {currentExercise.text}
-            </h2>
+          {renderExercise(currentExercise)}
 
-            {currentExercise.descrizione && (
-              <p className="text-gray-600 mb-6">
-                {currentExercise.descrizione}
-              </p>
-            )}
-
-            {renderExerciseContent()}
-
-            {/* Submit Button */}
-            {!showResult && (
-              <button
-                onClick={handleSubmitAnswer}
-                disabled={selectedOptions.length === 0}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-md transition-colors duration-200"
-              >
-                Controlla
-              </button>
-            )}
-
-            {/* Result */}
-            {showResult && (
-              <div
-                className={`p-4 rounded-md mb-6 ${
-                  isCorrect
-                    ? "bg-green-50 border-green-200"
-                    : "bg-red-50 border-red-200"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  {isCorrect ? (
-                    <span className="text-green-600 text-xl">✓</span>
-                  ) : (
-                    <span className="text-red-600 text-xl">✗</span>
-                  )}
-                  <span
+          {/* Result Display */}
+          {showResult && (
+            <div
+              className={`p-4 rounded-md mb-6 ${
+                isCorrect
+                  ? "bg-green-50 border border-green-200"
+                  : "bg-red-50 border border-red-200"
+              }`}
+            >
+              <div className="flex items-center">
+                <div
+                  className={`mr-3 ${
+                    isCorrect ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {isCorrect ? "✅" : "❌"}
+                </div>
+                <div>
+                  <p
                     className={`font-medium ${
                       isCorrect ? "text-green-800" : "text-red-800"
                     }`}
                   >
-                    {isCorrect ? "Risposta Corretta!" : "Risposta Incorretta"}
-                  </span>
+                    {isCorrect ? "Corretto!" : "Non corretto"}
+                  </p>
+                  {!isCorrect && (
+                    <p className="text-red-700 text-sm mt-1">
+                      Soluzione corretta: {currentExercise.soluzione}
+                    </p>
+                  )}
                 </div>
-
-                {!isCorrect && (
-                  <div>
-                    <p className="text-red-700 text-sm mb-2">
-                      Risposta corretta:
-                    </p>
-                    <p className="text-red-800 font-mono bg-red-100 p-2 rounded">
-                      {currentExercise.soluzione}
-                    </p>
-                  </div>
-                )}
-
-                {!isCorrect && (
-                  <button
-                    onClick={() => {
-                      setShowResult(false);
-                      setSelectedOptions([]);
-                    }}
-                    className="mt-3 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
-                  >
-                    Riprova
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Navigation */}
-          <div className="flex justify-between items-center pt-6 border-t">
-            <button
-              onClick={goToPreviousExercise}
-              disabled={isAtFirstExercise()}
-              className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-md transition-colors duration-200"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Precedente
-            </button>
-
-            <div className="text-center">
-              <div className="text-sm text-gray-500">
-                Lezione {currentLesson.lesson_number}
-              </div>
-              <div className="text-xs text-gray-400">
-                {currentLesson.completed_exercises}/
-                {currentLesson.total_exercises} completati
               </div>
             </div>
+          )}
 
-            <button
-              onClick={goToNextExercise}
-              disabled={!canMoveToNext() || isAtLastExercise()}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-md transition-colors duration-200"
-            >
-              Successivo
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
+          {/* Action Buttons */}
+          {renderActionButtons()}
+
+          {/* Exercise Completion Status */}
+          {isCurrentExerciseCompleted() && !showResult && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-green-800 text-sm font-medium">
+                ✅ Esercizio già completato in precedenza
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Lesson Progress */}
+        <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
+          <h3 className="font-medium text-gray-900 mb-3">
+            Progresso Lezione {currentLesson.lesson_number}
+          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-gray-600">
+              {currentLesson.completed_exercises}/
+              {currentLesson.total_exercises} esercizi completati
+            </span>
+            <span className="text-sm text-gray-600">
+              {Math.round(
+                (currentLesson.completed_exercises /
+                  currentLesson.total_exercises) *
+                  100
+              )}
+              %
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+              style={{
+                width: `${
+                  (currentLesson.completed_exercises /
+                    currentLesson.total_exercises) *
+                  100
+                }%`,
+              }}
+            ></div>
           </div>
         </div>
-      </main>
+
+        {/* Navigation Help */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-2">
+            💡 Suggerimenti per la Navigazione
+          </h4>
+          <div className="text-sm text-blue-800 space-y-1">
+            <p>
+              • <strong>Verifica:</strong> Controlla la tua risposta prima di
+              procedere
+            </p>
+            <p>
+              • <strong>Riprova:</strong> Se sbagli, puoi riprovare l'esercizio
+              immediatamente
+            </p>
+            <p>
+              • <strong>Avanti:</strong> Passa al prossimo esercizio quando hai
+              completato quello corrente
+            </p>
+            <p>
+              • <strong>Esercizi completati:</strong> Puoi saltare direttamente
+              agli esercizi successivi
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
