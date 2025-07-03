@@ -406,29 +406,6 @@ function SettingsModal({
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
           Impostazioni
         </h2>
-
-        {/* Sezione tema */}
-        <div className="mb-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-            Tema
-          </h3>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={onThemeChange}
-              className="flex items-center space-x-2 px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              {theme === "light" ? (
-                <Moon className="w-4 h-4" />
-              ) : (
-                <Sun className="w-4 h-4" />
-              )}
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {theme === "light" ? "Tema Scuro" : "Tema Chiaro"}
-              </span>
-            </button>
-          </div>
-        </div>
-
         {/* Sezione cambio password */}
         <div className="mb-6">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
