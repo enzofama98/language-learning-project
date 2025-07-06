@@ -154,7 +154,7 @@ export default function LoginPage() {
           <span className="text-sm text-gray-600">
             Non hai un account?{" "}
             <button
-              onClick={() => router.push('/register')}
+              onClick={() => router.push('/signup')}
               className="font-medium text-blue-600 hover:text-blue-500"
             >
               Registrati qui

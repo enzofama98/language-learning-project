@@ -21,7 +21,7 @@ export default function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();
 
   // Pagine che non devono mostrare l'header
-  const noHeaderPages = ["/login", "/signup", "/register"];
+  const noHeaderPages = ["/login", "/signup"];
   const showHeader = !noHeaderPages.includes(pathname);
 
   useEffect(() => {
