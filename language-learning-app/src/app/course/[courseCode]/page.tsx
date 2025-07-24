@@ -437,23 +437,26 @@ export default function CoursePage() {
     }
   };
 
-  const hasAnswerSelected = (): boolean => {
-    const exercise = getCurrentExercise();
-    if (!exercise) return false;
+const hasAnswerSelected = (): boolean => {
+  const exercise = getCurrentExercise();
+  if (!exercise) return false;
 
-    switch (exercise.tipo_esercizio) {
-      case 'traduci':
-        return selectedOptions.length > 0;
-      case 'seleziona_che_state':
-        return selectedOptions.length > 0;
-      case 'completa_frase':
-        return selectedOptions.length === 1;
-      case 'seleziona_coppie':
-        return selectedPairs.length > 0;
-      default:
-        return false;
-    }
-  };
+  switch (exercise.tipo_esercizio.toLowerCase()) {
+    case 'traduci':
+      return selectedOptions.length > 0;
+    case 'seleziona_che_state':
+    case 'seleziona ciò che senti':
+      return selectedOptions.length > 0;
+    case 'completa_frase':
+    case 'completa la frase':
+      return selectedOptions.length === 1;
+    case 'seleziona_coppie':
+    case 'seleziona le coppie':
+      return selectedPairs.length > 0;
+    default:
+      return false;
+  }
+};
 
   const handleAnswerSubmit = async (isCorrect: boolean) => {
     if (isCorrect) {
@@ -467,6 +470,31 @@ export default function CoursePage() {
   const handleRetry = () => {
     resetExerciseState();
   };
+
+  const handleOptionClick = (option: string) => {
+  const existingIndex = selectedOptions.findIndex(
+    (opt) => opt.value === option
+  );
+
+  if (existingIndex !== -1) {
+    // Rimuovi se già selezionato
+    const newSelected = selectedOptions.filter((opt) => opt.value !== option);
+    // Ricalcola gli ordini
+    const reorderedSelected = newSelected.map((opt, index) => ({
+      ...opt,
+      order: index + 1,
+    }));
+    setSelectedOptions(reorderedSelected);
+  } else {
+    // Aggiungi alla fine
+    const newOrder = selectedOptions.length + 1;
+    setSelectedOptions([
+      ...selectedOptions,
+      { value: option, order: newOrder },
+    ]);
+  }
+};
+
 
   // Render functions per i diversi tipi di esercizio
   const renderExerciseContent = () => {
@@ -528,7 +556,6 @@ const renderTraduciExercise = (exercise: Exercise) => {
   
   // Se non ci sono opzioni nel campo opzionali, controlla banca_parole
   const bancaParole = exercise.opzionali?.banca_parole || opzioni;
-  console.log("BANCA PAROLE: ", bancaParole)
   
   if (!bancaParole || bancaParole.length === 0) {
     return (
@@ -562,7 +589,13 @@ const renderTraduciExercise = (exercise: Exercise) => {
               <span
                 key={index}
                 onClick={() => {
-                  setSelectedOptions(selectedOptions.filter((_, i) => i !== index));
+                  // Rimuovi l'opzione cliccata e ricalcola gli ordini
+                  const newSelected = selectedOptions.filter((opt) => opt.value !== option.value);
+                  const reorderedSelected = newSelected.map((opt, idx) => ({
+                    ...opt,
+                    order: idx + 1,
+                  }));
+                  setSelectedOptions(reorderedSelected);
                 }}
                 className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
               >
@@ -577,24 +610,31 @@ const renderTraduciExercise = (exercise: Exercise) => {
         </div>
       </div>
 
-      {/* Opzioni disponibili - QUI È IL FIX PRINCIPALE */}
+      {/* Opzioni disponibili */}
       <div className="flex flex-wrap gap-2">
-        {bancaParole.map((opzione: string, index: number) => (
-          <button
-            key={index}
-            onClick={() => {
-              // ✅ QUESTO È IL FIX - Usa la funzione corretta per aggiungere
-              console.log("Clicking option:", opzione);
-              setSelectedOptions([
-                ...selectedOptions,
-                { value: opzione, order: selectedOptions.length }
-              ]);
-            }}
-            className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-          >
-            {opzione}
-          </button>
-        ))}
+        {bancaParole.map((opzione: string, index: number) => {
+          const isSelected = selectedOptions.some(opt => opt.value === opzione);
+          const selectedOrder = selectedOptions.find(opt => opt.value === opzione)?.order;
+          
+          return (
+            <button
+              key={index}
+              onClick={() => handleOptionClick(opzione)}
+              className={`px-4 py-2 rounded-lg border transition-colors ${
+                isSelected
+                  ? 'bg-blue-500 text-white border-blue-600 shadow-md'
+                  : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
+              }`}
+            >
+              {opzione}
+              {isSelected && (
+                <span className="ml-2 bg-blue-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center inline-flex">
+                  {selectedOrder}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -644,7 +684,7 @@ const renderTraduciExercise = (exercise: Exercise) => {
   };
 
   const renderSelezionaCheStateExercise = (exercise: Exercise) => {
-    const opzioni = exercise.opzionali?.opzioni || [];
+    const opzioni = exercise.opzionali?.banca_parole || [];
     
     return (
       <div className="space-y-6">
@@ -694,7 +734,7 @@ const renderTraduciExercise = (exercise: Exercise) => {
   };
 
   const renderSelezionaCoppieExercise = (exercise: Exercise) => {
-    const opzioni = exercise.opzionali?.opzioni || [];
+    const opzioni = exercise.opzionali?.coppie_mischiate || [];
     
     const handleWordClick = (word: string) => {
       if (pendingSelection) {
