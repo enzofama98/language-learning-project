@@ -119,6 +119,11 @@ export default function CoursePage() {
   const [isCorrect, setIsCorrect] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // stati aggiunti
+  const [attemptCounts, setAttemptCounts] = useState<Map<string, number>>(new Map());
+  const [showSolutions, setShowSolutions] = useState<Map<string, boolean>>(new Map());
+
+
   // Stati specifici per "Seleziona le coppie"
   const [selectedPairs, setSelectedPairs] = useState<SelectedPair[]>([]);
   const [pendingSelection, setPendingSelection] =
@@ -133,14 +138,26 @@ export default function CoursePage() {
     resetExerciseState();
   }, [currentLessonIndex, currentExerciseIndex]);
 
-  const resetExerciseState = () => {
-    setSelectedOptions([]);
-    setSelectedPairs([]);
-    setPendingSelection(null);
-    setShowResult(false);
-    setIsCorrect(false);
-    setIsPlaying(false);
-  };
+const resetExerciseState = () => {
+  setSelectedOptions([]);
+  setSelectedPairs([]);
+  setPendingSelection(null);
+  setShowResult(false);
+  setIsCorrect(false);
+  // NON resettare attemptCounts e showSolutions qui
+};
+
+const getAttemptsForCurrentExercise = () => {
+  const exercise = getCurrentExercise();
+  if (!exercise) return 0;
+  return attemptCounts.get(exercise.id) || 0;
+};
+
+const shouldShowSolution = () => {
+  const exercise = getCurrentExercise();
+  if (!exercise) return false;
+  return showSolutions.get(exercise.id) || false;
+};
 
   const initializePage = async () => {
     try {
@@ -387,37 +404,45 @@ export default function CoursePage() {
     return "bg-white text-gray-700 border-gray-300 hover:border-orange-400 hover:bg-orange-50";
   };
 
-  const handleSubmitAnswer = async () => {
-    const exercise = getCurrentExercise();
-    if (!exercise || !user) return;
+ const handleSubmitAnswer = async () => {
+  const exercise = getCurrentExercise();
+  if (!exercise || !user) return;
 
-    let correct = false;
+  // Incrementa il contatore dei tentativi per questo esercizio
+  const currentAttempts = attemptCounts.get(exercise.id) || 0;
+  const newAttempts = currentAttempts + 1;
+  setAttemptCounts(new Map(attemptCounts.set(exercise.id, newAttempts)));
 
-    switch (exercise.tipo_esercizio.toLowerCase()) {
-      case "traduci":
-        correct = validateTraduci(exercise);
-        break;
-      case "completa la frase":
-        correct = validateCompletaFrase(exercise);
-        break;
-      case "seleziona ciò che senti":
-        correct = validateSelezionaCheState(exercise);
-        break;
-      case "seleziona le coppie":
-        correct = validateSelezionaCoppie(exercise);
-        break;
-      default:
-        correct = false;
-    }
+  let correct = false;
 
-    setIsCorrect(correct);
-    setShowResult(true);
+  switch (exercise.tipo_esercizio.toLowerCase()) {
+    case "traduci":
+      correct = validateTraduci(exercise);
+      break;
+    case "completa la frase":
+      correct = validateCompletaFrase(exercise);
+      break;
+    case "seleziona ciò che senti":
+      correct = validateSelezionaCheState(exercise);
+      break;
+    case "seleziona le coppie":
+      correct = validateSelezionaCoppie(exercise);
+      break;
+    default:
+      correct = false;
+  }
 
-    // Se corretto, marca come completato
-    if (correct) {
-      await markExerciseCompleted(exercise.id);
-    }
-  };
+  setIsCorrect(correct);
+  setShowResult(true);
+
+  // Se corretto, marca come completato
+  if (correct) {
+    await markExerciseCompleted(exercise.id);
+  } else if (newAttempts >= 3) {
+    // Se ha raggiunto i 3 tentativi, mostra la soluzione
+    setShowSolutions(new Map(showSolutions.set(exercise.id, true)));
+  }
+};
 
   const handleRetryExercise = () => {
     resetExerciseState();
@@ -822,54 +847,44 @@ export default function CoursePage() {
     );
   };
 
-  const renderActionButtons = () => {
-    const exerciseCompleted = isCurrentExerciseCompleted();
+const renderActionButtons = () => {
+  const exerciseCompleted = isCurrentExerciseCompleted();
+  const attempts = getAttemptsForCurrentExercise();
+  const maxAttemptsReached = attempts >= 3;
+  const showSolution = shouldShowSolution();
 
-    return (
-      <div className="flex items-center justify-between">
+  return (
+    <div className="flex justify-between items-center">
+      <button
+        onClick={goToPreviousExercise}
+        disabled={currentLessonIndex === 0 && currentExerciseIndex === 0}
+        className="text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        ← Precedente
+      </button>
+
+      {!showResult ? (
+        // Prima della verifica
         <button
-          onClick={goToPreviousExercise}
-          disabled={currentLessonIndex === 0 && currentExerciseIndex === 0}
-          className="bg-gray-100 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 px-4 py-2 rounded-md"
+          onClick={handleSubmitAnswer}
+          disabled={!hasAnswerSelected() || maxAttemptsReached}
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md"
         >
-          ← Precedente
+          Verifica
         </button>
-
+      ) : (
+        // Dopo la verifica
         <div className="flex gap-3">
-          {!showResult ? (
-            // Prima della verifica
+          {!isCorrect && !maxAttemptsReached && (
             <button
-              onClick={handleSubmitAnswer}
-              disabled={!hasAnswerSelected()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md"
+              onClick={handleRetryExercise}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
             >
-              Verifica
+              🔄 Riprova ({3 - attempts} tentativi rimasti)
             </button>
-          ) : (
-            // Dopo la verifica
-            <div className="flex gap-3">
-              {!isCorrect && (
-                <button
-                  onClick={handleRetryExercise}
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
-                >
-                  🔄 Riprova
-                </button>
-              )}
-
-              {(isCorrect || exerciseCompleted) && canMoveToNext() && (
-                <button
-                  onClick={goToNextExercise}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-                >
-                  Avanti →
-                </button>
-              )}
-            </div>
           )}
 
-          {/* Pulsante sempre disponibile per esercizi già completati */}
-          {exerciseCompleted && !showResult && canMoveToNext() && (
+          {(isCorrect || exerciseCompleted || maxAttemptsReached) && canMoveToNext() && (
             <button
               onClick={goToNextExercise}
               className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
@@ -878,9 +893,20 @@ export default function CoursePage() {
             </button>
           )}
         </div>
-      </div>
-    );
-  };
+      )}
+
+      {/* Pulsante sempre disponibile per esercizi già completati */}
+      {exerciseCompleted && !showResult && canMoveToNext() && (
+        <button
+          onClick={goToNextExercise}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+        >
+          Avanti →
+        </button>
+      )}
+    </div>
+  );
+};
 
   if (loading) {
     return (
@@ -999,39 +1025,55 @@ export default function CoursePage() {
           {renderExercise(currentExercise)}
 
           {/* Result Display */}
-          {showResult && (
-            <div
-              className={`p-4 rounded-md mb-6 ${
-                isCorrect
-                  ? "bg-green-50 border border-green-200"
-                  : "bg-red-50 border border-red-200"
-              }`}
-            >
-              <div className="flex items-center">
-                <div
-                  className={`mr-3 ${
-                    isCorrect ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {isCorrect ? "✅" : "❌"}
-                </div>
-                <div>
-                  <p
-                    className={`font-medium ${
-                      isCorrect ? "text-green-800" : "text-red-800"
-                    }`}
-                  >
-                    {isCorrect ? "Corretto!" : "Non corretto"}
-                  </p>
-                  {!isCorrect && (
-                    <p className="text-red-700 text-sm mt-1">
-                      Soluzione corretta: {currentExercise.soluzione}
-                    </p>
-                  )}
-                </div>
+{showResult && (
+  <div className="mt-6 p-4 rounded-lg border-2 bg-gray-50 border-gray-300">
+    <div className="flex items-center gap-3">
+      <div className={`text-2xl ${isCorrect ? "text-green-600" : "text-red-600"}`}>
+        {isCorrect ? "✅" : "❌"}
+      </div>
+      <div>
+        <p className={`font-medium ${isCorrect ? "text-green-800" : "text-red-800"}`}>
+          {isCorrect ? "Corretto!" : "Non corretto"}
+        </p>
+        {!isCorrect && (
+          <>
+            <p className="text-red-700 text-sm mt-1">
+              {getAttemptsForCurrentExercise() < 3 
+                ? `Tentativo ${getAttemptsForCurrentExercise()} di 3`
+                : "Hai esaurito i tentativi disponibili"}
+            </p>
+            {shouldShowSolution() && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-blue-800 font-medium mb-1">💡 Soluzione:</p>
+                <p className="text-blue-900">{currentExercise.soluzione}</p>
               </div>
-            </div>
-          )}
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+)}
+
+{!showResult && getAttemptsForCurrentExercise() > 0 && getAttemptsForCurrentExercise() < 3 && !isCurrentExerciseCompleted() && (
+  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+    <p className="text-yellow-800 text-sm font-medium">
+      ⚠️ Hai già fatto {getAttemptsForCurrentExercise()} tentativ{getAttemptsForCurrentExercise() === 1 ? 'o' : 'i'}. 
+      Te ne riman{3 - getAttemptsForCurrentExercise() === 1 ? 'e' : 'gono'} {3 - getAttemptsForCurrentExercise()}.
+    </p>
+  </div>
+)}
+
+{getAttemptsForCurrentExercise() >= 3 && !isCurrentExerciseCompleted() && !showResult && (
+  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+    <p className="text-red-800 text-sm font-medium">
+      ❌ Hai esaurito i 3 tentativi disponibili per questo esercizio.
+    </p>
+    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+      <p className="text-blue-800 text-sm">💡 Soluzione: {getCurrentExercise()?.soluzione}</p>
+    </div>
+  </div>
+)}
 
           {/* Action Buttons */}
           {renderActionButtons()}
