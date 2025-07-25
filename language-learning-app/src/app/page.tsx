@@ -30,6 +30,17 @@ interface User {
   email: string;
 }
 
+interface CourseProgress {
+  language_code: string;
+  total_exercises: number;
+  completed_exercises: number;
+  completion_percentage: number;
+  total_lessons: number;
+  completed_lessons: number;
+  last_activity: string | null;
+  total_time_spent: number | null;
+}
+
 interface UserStats {
   totalCourses: number;
   completedCourses: number;
@@ -57,6 +68,7 @@ export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [courseProgressMap, setCourseProgressMap] = useState<Map<string, CourseProgress>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const router = useRouter();
@@ -188,6 +200,57 @@ export default function HomePage() {
       setStatsLoading(false);
     }
   };
+
+  const loadAllCoursesProgress = async () => {
+  try {
+    if (!user) return;
+
+    // Per ogni corso abilitato, chiama la funzione SQL get_course_progress
+    const progressPromises = buttons
+      .filter(button => button.enabled)
+      .map(async (button) => {
+        try {
+          const { data, error } = await supabase.rpc('get_course_progress', {
+            p_user_id: user.id,
+            p_language_code: button.language_code
+          });
+
+          if (error) {
+            console.error(`Errore progresso per ${button.language_code}:`, error);
+            return null;
+          }
+
+          return {
+            language_code: button.language_code,
+            progress: data
+          };
+        } catch (err) {
+          console.error(`Errore caricamento progresso ${button.language_code}:`, err);
+          return null;
+        }
+      });
+
+    const results = await Promise.all(progressPromises);
+    
+    // Crea mappa del progresso
+    const progressMap = new Map<string, CourseProgress>();
+    results.forEach(result => {
+      if (result && result.progress) {
+        progressMap.set(result.language_code, result.progress);
+      }
+    });
+
+    setCourseProgressMap(progressMap);
+  } catch (err) {
+    console.error("Errore caricamento progresso corsi:", err);
+  }
+};
+
+useEffect(() => {
+  if (user && buttons.length > 0) {
+    loadAllCoursesProgress();
+  }
+}, [user, buttons]);
 
   const handleButtonClick = async (button: Button) => {
     if (!button.enabled) return;
@@ -508,90 +571,144 @@ export default function HomePage() {
             )}
         </div>
 
-        {/* Lista Corsi */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            Corsi Disponibili
-          </h2>
+{/* Lista Corsi */}
+<div className="space-y-4">
+  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+    Corsi Disponibili
+  </h2>
 
-          {buttons.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">
-                Nessun corso disponibile.
-              </p>
-            </div>
-          ) : (
-            buttons.map((button) => (
+  {buttons.length === 0 ? (
+    <div className="text-center py-12">
+      <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+      <p className="text-gray-500 dark:text-gray-400">
+        Nessun corso disponibile.
+      </p>
+    </div>
+  ) : (
+    buttons.map((button) => {
+      const progress = courseProgressMap.get(button.language_code);
+      const percentage = progress?.completion_percentage || 0;
+      const isCompleted = percentage === 100;
+      
+      return (
+        <div
+          key={button.id}
+          onClick={() => handleButtonClick(button)}
+          className={`relative p-6 rounded-lg border-2 transition-all duration-200 ${
+            button.enabled
+              ? "border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md cursor-pointer"
+              : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-4">
               <div
-                key={button.id}
-                onClick={() => handleButtonClick(button)}
-                className={`relative p-6 rounded-lg border-2 transition-all duration-200 ${
+                className={`w-12 h-12 rounded-lg flex items-center justify-center ${
                   button.enabled
-                    ? "border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md cursor-pointer"
-                    : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed"
+                    ? isCompleted
+                      ? "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
+                      : "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-400"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div
-                      className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        button.enabled
-                          ? "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-400"
-                      }`}
-                    >
-                      {button.enabled ? (
-                        <PlayCircle className="w-6 h-6" />
-                      ) : (
-                        <Lock className="w-6 h-6" />
-                      )}
-                    </div>
-                    <div>
-                      <h3
-                        className={`text-lg font-semibold ${
-                          button.enabled
-                            ? "text-gray-900 dark:text-white"
-                            : "text-gray-500 dark:text-gray-400"
-                        }`}
-                      >
-                        {button.label}
-                      </h3>
-                      {button.description && (
-                        <p
-                          className={`text-sm ${
-                            button.enabled
-                              ? "text-gray-600 dark:text-gray-300"
-                              : "text-gray-400 dark:text-gray-500"
-                          }`}
-                        >
-                          {button.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {button.enabled && (
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
-                  )}
-                </div>
-
-                {/* Badge stato */}
-                <div className="absolute top-4 right-4">
-                  {button.enabled ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300">
-                      Disponibile
-                    </span>
+                {button.enabled ? (
+                  isCompleted ? (
+                    <CheckCircle className="w-6 h-6" />
                   ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
-                      Bloccato
-                    </span>
-                  )}
-                </div>
+                    <PlayCircle className="w-6 h-6" />
+                  )
+                ) : (
+                  <Lock className="w-6 h-6" />
+                )}
               </div>
-            ))
+              <div>
+                <h3
+                  className={`text-lg font-semibold ${
+                    button.enabled
+                      ? "text-gray-900 dark:text-white"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  {button.label}
+                </h3>
+                {button.description && (
+                  <p
+                    className={`text-sm ${
+                      button.enabled
+                        ? "text-gray-600 dark:text-gray-300"
+                        : "text-gray-400 dark:text-gray-500"
+                    }`}
+                  >
+                    {button.description}
+                  </p>
+                )}
+                {button.enabled && progress && (
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-x-3">
+                    <span>{progress.completed_exercises}/{progress.total_exercises} esercizi</span>
+                    <span>•</span>
+                    <span>{progress.completed_lessons}/{progress.total_lessons} lezioni</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <ChevronRight
+              className={`w-5 h-5 ${
+                button.enabled
+                  ? "text-gray-400 dark:text-gray-500"
+                  : "text-gray-300 dark:text-gray-600"
+              }`}
+            />
+          </div>
+
+          {/* Barra di progresso */}
+          {button.enabled && progress && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Progresso
+                </span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {Math.round(percentage)}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                <div
+                  className={`h-2.5 rounded-full transition-all duration-500 ${
+                    isCompleted
+                      ? "bg-green-600 dark:bg-green-500"
+                      : percentage > 0
+                      ? "bg-blue-600 dark:bg-blue-500"
+                      : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                  style={{ width: `${percentage}%` }}
+                ></div>
+              </div>
+              {isCompleted && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                  ✅ Corso completato!
+                </p>
+              )}
+              {progress.last_activity && !isCompleted && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Ultimo accesso: {new Date(progress.last_activity).toLocaleDateString('it-IT')}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Badge stato per corsi non abilitati */}
+          {!button.enabled && (
+            <div className="absolute top-4 right-4">
+              <span className="px-2 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+                Bloccato
+              </span>
+            </div>
           )}
         </div>
+      );
+    })
+  )}
+</div>
       </main>
     </div>
   );
