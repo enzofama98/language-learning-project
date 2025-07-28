@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { BookOpen as BookIcon } from "lucide-react";
 import {
   BookOpen,
   Clock,
@@ -328,13 +329,24 @@ useEffect(() => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            I Tuoi Corsi
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Benvenuto, {user?.email}! Seleziona un corso per iniziare.
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              I Tuoi Corsi
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Benvenuto, {user?.email}! Seleziona un corso per iniziare.
+            </p>
+          </div>
+          
+          {/* Bottone I nostri libri */}
+          <button
+            onClick={() => router.push("/books")}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+          >
+            <BookIcon className="w-5 h-5" />
+            <span className="font-medium">I nostri libri</span>
+          </button>
         </div>
 
         {/* Statistiche Corsi Compatte */}
