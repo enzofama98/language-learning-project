@@ -101,7 +101,7 @@ export default function CoursePage() {
   const params = useParams();
   const router = useRouter();
   const courseCode = params?.courseCode as string;
-
+  const [showResumeMessage, setShowResumeMessage] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
@@ -231,58 +231,139 @@ const shouldShowSolution = () => {
     }
   };
 
-  const loadExercisesAndProgress = async (userId: string) => {
-    try {
-      // Carica esercizi
-      const { data: exercises, error: exercisesError } = await supabase
-        .from("anagrafica_esercizi")
-        .select("*")
-        .eq("language_code", courseCode.toUpperCase())
-        .eq("active", true)
-        .order("lezione", { ascending: true })
-        .order("created_at", { ascending: true });
+const loadExercisesAndProgress = async (userId: string) => {
+  try {
+    // Carica esercizi
+    const { data: exercises, error: exercisesError } = await supabase
+      .from("anagrafica_esercizi")
+      .select("*")
+      .eq("language_code", courseCode.toUpperCase())
+      .eq("active", true)
+      .order("lezione", { ascending: true })
+      .order("created_at", { ascending: true });
 
-      if (exercisesError) throw exercisesError;
+    if (exercisesError) throw exercisesError;
 
-      // Carica progresso
-      const { data: progress, error: progressError } = await supabase
-        .from("exercise_progress")
-        .select("exercise_id, completed")
-        .eq("user_id", userId);
+    // Carica progresso
+    const { data: progress, error: progressError } = await supabase
+      .from("exercise_progress")
+      .select("exercise_id, completed")
+      .eq("user_id", userId)
+      .eq("completed", true);
 
-      if (progressError) throw progressError;
+    if (progressError) throw progressError;
 
-      // Organizza per lezioni
-      const progressMap = new Map(
-        progress?.map((p) => [p.exercise_id, p.completed]) || []
-      );
+    // Crea mappa del progresso
+    const progressMap = new Map<string, boolean>();
+    progress?.forEach((p) => {
+      progressMap.set(p.exercise_id, p.completed);
+    });
+    setExerciseProgress(progressMap);
 
-      const lessonMap = new Map<number, Exercise[]>();
-      exercises?.forEach((ex) => {
-        if (!lessonMap.has(ex.lezione)) {
-          lessonMap.set(ex.lezione, []);
-        }
-        lessonMap.get(ex.lezione)!.push(ex);
-      });
+    // Organizza esercizi per lezione
+    const lessonGroups = exercises?.reduce((acc: any, exercise: Exercise) => {
+      const lessonNumber = exercise.lezione;
+      if (!acc[lessonNumber]) {
+        acc[lessonNumber] = [];
+      }
+      acc[lessonNumber].push(exercise);
+      return acc;
+    }, {});
 
-      const lessonsArray: Lesson[] = Array.from(lessonMap.entries())
-        .sort(([a], [b]) => a - b)
-        .map(([lessonNum, exs]) => ({
-          lesson_number: lessonNum,
-          exercises: exs,
-          completed_exercises: exs.filter((ex) => progressMap.get(ex.id))
-            .length,
-          total_exercises: exs.length,
-        }));
+    // Crea array di lezioni con statistiche
+    const lessonsArray: Lesson[] = Object.entries(lessonGroups || {}).map(
+      ([lessonNumber, exercises]: [string, any]) => {
+        const completedCount = exercises.filter((ex: Exercise) =>
+          progressMap.has(ex.id)
+        ).length;
 
-      setLessons(lessonsArray);
-      setExerciseProgress(progressMap);
-    } catch (err) {
-      console.error("Errore caricamento esercizi:", err);
-      throw err;
+        return {
+          lesson_number: parseInt(lessonNumber),
+          exercises: exercises,
+          completed_exercises: completedCount,
+          total_exercises: exercises.length,
+        };
+      }
+    );
+
+    const sortedLessons = lessonsArray.sort((a, b) => a.lesson_number - b.lesson_number);
+    setLessons(sortedLessons);
+
+    // NUOVA PARTE: Trova la posizione di partenza ottimale
+    const startingPosition = findStartingPosition(sortedLessons, progressMap);
+    setCurrentLessonIndex(startingPosition.lessonIndex);
+    setCurrentExerciseIndex(startingPosition.exerciseIndex);
+
+    if (startingPosition.lessonIndex > 0 || startingPosition.exerciseIndex > 0) {
+      setShowResumeMessage(true);
+      // Nascondi il messaggio dopo 5 secondi
+      setTimeout(() => setShowResumeMessage(false), 5000);
     }
-  };
 
+    console.log(`📍 Ripresa corso da: Lezione ${startingPosition.lessonIndex + 1}, Esercizio ${startingPosition.exerciseIndex + 1}`);
+    
+  } catch (err) {
+    console.error("Errore caricamento esercizi:", err);
+    throw err;
+  }
+};
+
+  const findStartingPosition = (lessons: Lesson[], exerciseProgress: Map<string, boolean>) => {
+  let lastCompletedLessonIndex = -1;
+  let lastCompletedExerciseIndex = -1;
+  let firstIncompleteLessonIndex = -1;
+  let firstIncompleteExerciseIndex = -1;
+
+  // Trova l'ultima posizione completata e la prima non completata
+  for (let lessonIndex = 0; lessonIndex < lessons.length; lessonIndex++) {
+    const lesson = lessons[lessonIndex];
+    let allExercisesCompleted = true;
+    
+    for (let exerciseIndex = 0; exerciseIndex < lesson.exercises.length; exerciseIndex++) {
+      const exercise = lesson.exercises[exerciseIndex];
+      const isCompleted = exerciseProgress.has(exercise.id);
+      
+      if (isCompleted) {
+        // Aggiorna l'ultima posizione completata
+        lastCompletedLessonIndex = lessonIndex;
+        lastCompletedExerciseIndex = exerciseIndex;
+      } else {
+        allExercisesCompleted = false;
+        // Se è la prima volta che troviamo un esercizio non completato
+        if (firstIncompleteLessonIndex === -1) {
+          firstIncompleteLessonIndex = lessonIndex;
+          firstIncompleteExerciseIndex = exerciseIndex;
+        }
+      }
+    }
+  }
+
+  // Logica per determinare dove iniziare:
+  // 1. Se c'è un esercizio non completato, vai al primo non completato
+  // 2. Altrimenti, se tutto è completato, vai all'ultimo esercizio
+  // 3. Se niente è completato, inizia dal primo esercizio
+  
+  if (firstIncompleteLessonIndex !== -1) {
+    // C'è almeno un esercizio non completato
+    return {
+      lessonIndex: firstIncompleteLessonIndex,
+      exerciseIndex: firstIncompleteExerciseIndex
+    };
+  } else if (lastCompletedLessonIndex !== -1) {
+    // Tutto completato, vai all'ultimo
+    return {
+      lessonIndex: lastCompletedLessonIndex,
+      exerciseIndex: lastCompletedExerciseIndex
+    };
+  } else {
+    // Niente completato, inizia dal primo
+    return {
+      lessonIndex: 0,
+      exerciseIndex: 0
+    };
+  }
+};
+  
   const getCurrentExercise = (): Exercise | null => {
     if (lessons.length === 0 || currentLessonIndex >= lessons.length)
       return null;
@@ -1007,6 +1088,28 @@ const renderActionButtons = () => {
           </div>
         </div>
       </div>
+
+      {/* Messaggio di ripresa */}
+      {showResumeMessage && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 max-w-4xl mx-auto mt-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <span className="text-blue-500 text-lg">▶️</span>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                Ripresa dal punto in cui avevi lasciato: <strong>Lezione {currentLessonIndex + 1}, Esercizio {currentExerciseIndex + 1}</strong>
+              </p>
+            </div>
+            <button
+              onClick={() => setShowResumeMessage(false)}
+              className="ml-auto text-blue-500 hover:text-blue-700"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 py-6">
