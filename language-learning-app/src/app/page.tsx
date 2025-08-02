@@ -253,41 +253,41 @@ useEffect(() => {
   }
 }, [user, buttons]);
 
-  const handleButtonClick = async (button: Button) => {
-    if (!button.enabled) return;
+const handleButtonClick = async (button: Button) => {
+  if (!button.enabled) return;
 
-    try {
-      const token = (await supabase.auth.getSession()).data.session
-        ?.access_token;
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      // Log dell'accesso
-      const response = await fetch("/api/log-access", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          language_code: button.language_code,
-          button_id: button.id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Accesso non autorizzato");
-      }
-
-      // Redirect al contenuto del corso
-      router.push(`/course/${button.language_code}`);
-    } catch (err) {
-      console.error("Errore accesso corso:", err);
-      alert("Errore nell'accesso al corso. Riprova.");
+  try {
+    const token = (await supabase.auth.getSession()).data.session
+      ?.access_token;
+    if (!token) {
+      router.push("/login");
+      return;
     }
-  };
+
+    // Log dell'accesso
+    const response = await fetch("/api/log-access", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        language_code: button.language_code,
+        button_id: button.id,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Accesso non autorizzato");
+    }
+
+    // MODIFICA: Redirect alla pagina delle lezioni invece che direttamente al corso
+    router.push(`/course/${button.language_code}/lessons`);
+  } catch (err) {
+    console.error("Errore accesso corso:", err);
+    alert("Errore nell'accesso al corso. Riprova.");
+  }
+};
 
   if (loading) {
     return (
