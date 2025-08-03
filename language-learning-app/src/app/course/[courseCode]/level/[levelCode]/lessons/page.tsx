@@ -1,3 +1,6 @@
+// FILE: src/app/course/[courseCode]/level/[levelCode]/lessons/page.tsx
+// Crea questo file nella posizione indicata
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -9,6 +12,7 @@ import {
   Lock, 
   PlayCircle, 
   ChevronRight,
+  ChevronLeft,
   Home,
   Trophy,
   Clock
@@ -34,10 +38,11 @@ interface User {
   email: string;
 }
 
-export default function LessonsOverviewPage() {
+export default function LevelLessonsPage() {
   const params = useParams();
   const router = useRouter();
   const courseCode = params?.courseCode as string;
+  const levelCode = params?.levelCode as string;
 
   const [user, setUser] = useState<User | null>(null);
   const [lessons, setLessons] = useState<LessonInfo[]>([]);
@@ -48,7 +53,7 @@ export default function LessonsOverviewPage() {
 
   useEffect(() => {
     initializePage();
-  }, [courseCode]);
+  }, [courseCode, levelCode]);
 
   const initializePage = async () => {
     try {
@@ -118,11 +123,12 @@ export default function LessonsOverviewPage() {
 
   const loadLessonsOverview = async (userId: string) => {
     try {
-      // Carica tutti gli esercizi del corso
+      // Carica solo gli esercizi del livello specifico
       const { data: exercises, error: exercisesError } = await supabase
         .from("anagrafica_esercizi")
         .select("id, lezione")
         .eq("language_code", courseCode.toUpperCase())
+        .eq("livello", levelCode) // FILTRA PER LIVELLO
         .eq("active", true)
         .order("lezione", { ascending: true })
         .order("created_at", { ascending: true });
@@ -209,8 +215,8 @@ export default function LessonsOverviewPage() {
       return;
     }
 
-    // Naviga direttamente agli esercizi della lezione
-    router.push(`/course/${courseCode}/lessons/${lesson.lesson_number}`);
+    // Naviga agli esercizi includendo il livello nel percorso
+    router.push(`/course/${courseCode}/level/${levelCode}/lessons/${lesson.lesson_number}`);
   };
 
   if (loading) {
@@ -252,13 +258,22 @@ export default function LessonsOverviewPage() {
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {courseName}
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Seleziona una lezione per iniziare
-              </p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push(`/course/${courseCode}/levels`)}
+                className="flex items-center gap-1 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                <span className="text-sm">Livelli</span>
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {courseName} - Livello {levelCode}
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Seleziona una lezione per iniziare
+                </p>
+              </div>
             </div>
             <button
               onClick={() => router.push("/")}
@@ -277,7 +292,7 @@ export default function LessonsOverviewPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-500" />
-              Progresso Generale
+              Progresso Livello {levelCode}
             </h2>
             <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {overallPercentage}%

@@ -253,12 +253,14 @@ useEffect(() => {
   }
 }, [user, buttons]);
 
+// FILE: src/app/page.tsx
+// Trova la funzione handleButtonClick e sostituiscila con questa:
+
 const handleButtonClick = async (button: Button) => {
   if (!button.enabled) return;
 
   try {
-    const token = (await supabase.auth.getSession()).data.session
-      ?.access_token;
+    const token = (await supabase.auth.getSession()).data.session?.access_token;
     if (!token) {
       router.push("/login");
       return;
@@ -281,8 +283,8 @@ const handleButtonClick = async (button: Button) => {
       throw new Error("Accesso non autorizzato");
     }
 
-    // MODIFICA: Redirect alla pagina delle lezioni invece che direttamente al corso
-    router.push(`/course/${button.language_code}/lessons`);
+    // MODIFICA: Redirect alla pagina dei livelli invece che alle lezioni
+    router.push(`/course/${button.language_code}/levels`);
   } catch (err) {
     console.error("Errore accesso corso:", err);
     alert("Errore nell'accesso al corso. Riprova.");
