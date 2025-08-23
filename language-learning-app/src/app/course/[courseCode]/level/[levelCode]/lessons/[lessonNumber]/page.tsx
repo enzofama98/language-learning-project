@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { ChevronLeft } from "lucide-react";
 
 interface Exercise {
   id: string;
@@ -97,10 +98,12 @@ const PAIR_COLORS = [
   },
 ];
 
-export default function CoursePage() {
+export default function LessonExercisesPage() {
   const params = useParams();
+  const levelCode = params?.levelCode as string;
   const router = useRouter();
   const courseCode = params?.courseCode as string;
+  const lessonNumber = parseInt(params?.lessonNumber as string);
   const [showResumeMessage, setShowResumeMessage] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -231,82 +234,68 @@ const shouldShowSolution = () => {
     }
   };
 
-const loadExercisesAndProgress = async (userId: string) => {
-  try {
-    // Carica esercizi
-    const { data: exercises, error: exercisesError } = await supabase
-      .from("anagrafica_esercizi")
-      .select("*")
-      .eq("language_code", courseCode.toUpperCase())
-      .eq("active", true)
-      .order("lezione", { ascending: true })
-      .order("created_at", { ascending: true });
+ const loadExercisesAndProgress = async (userId: string) => {
+    try {
+      // Carica solo gli esercizi della lezione specifica
+        const { data: exercises, error: exercisesError } = await supabase
+        .from("anagrafica_esercizi")
+        .select("*")
+        .eq("language_code", courseCode.toUpperCase())
+        .eq("livello", levelCode) // AGGIUNGI QUESTO FILTRO
+        .eq("lezione", lessonNumber)
+        .eq("active", true)
+        .order("created_at", { ascending: true });
 
-    if (exercisesError) throw exercisesError;
+      if (exercisesError) throw exercisesError;
 
-    // Carica progresso
-    const { data: progress, error: progressError } = await supabase
-      .from("exercise_progress")
-      .select("exercise_id, completed")
-      .eq("user_id", userId)
-      .eq("completed", true);
+      // Carica progresso
+      const { data: progress, error: progressError } = await supabase
+        .from("exercise_progress")
+        .select("exercise_id, completed")
+        .eq("user_id", userId)
+        .eq("completed", true);
 
-    if (progressError) throw progressError;
+      if (progressError) throw progressError;
 
-    // Crea mappa del progresso
-    const progressMap = new Map<string, boolean>();
-    progress?.forEach((p) => {
-      progressMap.set(p.exercise_id, p.completed);
-    });
-    setExerciseProgress(progressMap);
+      // Crea mappa del progresso
+      const progressMap = new Map<string, boolean>();
+      progress?.forEach((p) => {
+        progressMap.set(p.exercise_id, p.completed);
+      });
+      setExerciseProgress(progressMap);
 
-    // Organizza esercizi per lezione
-    const lessonGroups = exercises?.reduce((acc: any, exercise: Exercise) => {
-      const lessonNumber = exercise.lezione;
-      if (!acc[lessonNumber]) {
-        acc[lessonNumber] = [];
-      }
-      acc[lessonNumber].push(exercise);
-      return acc;
-    }, {});
+      // Crea una singola "lezione" con gli esercizi filtrati
+      const lesson: Lesson = {
+        lesson_number: lessonNumber,
+        exercises: exercises || [],
+        completed_exercises: (exercises || []).filter((ex) => progressMap.has(ex.id)).length,
+        total_exercises: (exercises || []).length,
+      };
 
-    // Crea array di lezioni con statistiche
-    const lessonsArray: Lesson[] = Object.entries(lessonGroups || {}).map(
-      ([lessonNumber, exercises]: [string, any]) => {
-        const completedCount = exercises.filter((ex: Exercise) =>
-          progressMap.has(ex.id)
-        ).length;
+      setLessons([lesson]); // Array con una sola lezione
+      setCurrentLessonIndex(0);
+      
+      // Trova la posizione di partenza
+      const startingExerciseIndex = findStartingExerciseIndex(exercises || [], progressMap);
+      setCurrentExerciseIndex(startingExerciseIndex);
 
-        return {
-          lesson_number: parseInt(lessonNumber),
-          exercises: exercises,
-          completed_exercises: completedCount,
-          total_exercises: exercises.length,
-        };
-      }
-    );
-
-    const sortedLessons = lessonsArray.sort((a, b) => a.lesson_number - b.lesson_number);
-    setLessons(sortedLessons);
-
-    // NUOVA PARTE: Trova la posizione di partenza ottimale
-    const startingPosition = findStartingPosition(sortedLessons, progressMap);
-    setCurrentLessonIndex(startingPosition.lessonIndex);
-    setCurrentExerciseIndex(startingPosition.exerciseIndex);
-
-    if (startingPosition.lessonIndex > 0 || startingPosition.exerciseIndex > 0) {
-      setShowResumeMessage(true);
-      // Nascondi il messaggio dopo 5 secondi
-      setTimeout(() => setShowResumeMessage(false), 5000);
+    } catch (err) {
+      console.error("Errore caricamento esercizi:", err);
+      throw err;
     }
+  };
 
-    console.log(`📍 Ripresa corso da: Lezione ${startingPosition.lessonIndex + 1}, Esercizio ${startingPosition.exerciseIndex + 1}`);
-    
-  } catch (err) {
-    console.error("Errore caricamento esercizi:", err);
-    throw err;
-  }
-};
+    // 4. Aggiungi questa funzione helper
+  const findStartingExerciseIndex = (exercises: any[], progressMap: Map<string, boolean>) => {
+    // Trova il primo esercizio non completato
+    for (let i = 0; i < exercises.length; i++) {
+      if (!progressMap.has(exercises[i].id)) {
+        return i;
+      }
+    }
+    // Se tutti sono completati, vai all'ultimo
+    return exercises.length > 0 ? exercises.length - 1 : 0;
+  };
 
   const findStartingPosition = (lessons: Lesson[], exerciseProgress: Map<string, boolean>) => {
   let lastCompletedLessonIndex = -1;
@@ -363,7 +352,12 @@ const loadExercisesAndProgress = async (userId: string) => {
     };
   }
 };
-  
+const handleLessonComplete = () => {
+    // Mostra un messaggio di completamento e torna alle lezioni
+    alert("🎉 Hai completato questa lezione!");
+    router.push(`/course/${courseCode}/lessons`);
+  };
+
   const getCurrentExercise = (): Exercise | null => {
     if (lessons.length === 0 || currentLessonIndex >= lessons.length)
       return null;
@@ -604,15 +598,26 @@ const loadExercisesAndProgress = async (userId: string) => {
     }
   };
 
-  const goToNextExercise = () => {
-    const currentLesson = lessons[currentLessonIndex];
-    if (currentExerciseIndex < currentLesson.exercises.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-    } else if (currentLessonIndex < lessons.length - 1) {
-      setCurrentLessonIndex(currentLessonIndex + 1);
-      setCurrentExerciseIndex(0);
-    }
-  };
+  // Modifica goToNextExercise per gestire il completamento della lezione
+const goToNextExercise = () => {
+  const currentLesson = lessons[currentLessonIndex];
+  if (currentExerciseIndex < currentLesson.exercises.length - 1) {
+    setCurrentExerciseIndex(currentExerciseIndex + 1);
+  } else {
+    // La lezione è completata! Torna alle lezioni del livello
+    alert("🎉 Hai completato questa lezione!");
+    router.push(`/course/${courseCode}/level/${levelCode}/lessons`);
+  }
+};
+
+const completeLessonAndReturn = () => {
+  // Mostra messaggio di completamento (opzionale)
+  const confirmed = window.confirm("🎉 Hai completato questa lezione! Vuoi tornare all'elenco delle lezioni?");
+  
+  if (confirmed) {
+    router.push(`/course/${courseCode}/lessons`);
+  }
+};
 
   const goToPreviousExercise = () => {
     if (currentExerciseIndex > 0) {
@@ -965,13 +970,15 @@ const renderActionButtons = () => {
             </button>
           )}
 
-          {(isCorrect || exerciseCompleted || maxAttemptsReached) && canMoveToNext() && (
-            <button
-              onClick={goToNextExercise}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-            >
-              Avanti →
-            </button>
+        {(isCorrect || exerciseCompleted || maxAttemptsReached) && (
+          <button
+            onClick={goToNextExercise}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+          >
+            {currentExerciseIndex === currentLesson.exercises.length - 1 
+              ? "Completa Lezione →" 
+              : "Avanti →"}
+          </button>
           )}
         </div>
       )}
@@ -1022,72 +1029,60 @@ const renderActionButtons = () => {
   const progress = getCurrentProgress();
   const currentLesson = lessons[currentLessonIndex];
 
-  if (!currentExercise) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Corso Completato!
-          </h2>
-          <p className="text-gray-600 mb-4">
-            Hai completato tutti gli esercizi di {courseName}
-          </p>
-          <button
-            onClick={() => router.push("/")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
-          >
-            Torna alla Home
-          </button>
-        </div>
+if (!currentExercise) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="text-6xl mb-4">🎉</div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Lezione Completata!
+        </h2>
+        <p className="text-gray-600 mb-4">
+          Hai completato tutti gli esercizi della lezione {lessonNumber}
+        </p>
+<button
+  onClick={() => router.push(`/course/${courseCode}/level/${levelCode}/lessons`)}
+  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+>
+  Torna alle Lezioni
+</button>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{courseName}</h1>
-              <p className="text-sm text-gray-600">
-                Lezione {currentLesson.lesson_number} - Esercizio{" "}
-                {currentExerciseIndex + 1} di {currentLesson.exercises.length}
-              </p>
-            </div>
+{/* Header */}
+  <div className="bg-white shadow-sm border-b">
+    <div className="max-w-4xl mx-auto px-4 py-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
             <button
-              onClick={() => router.push("/")}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md"
+            onClick={() => router.push(`/course/${courseCode}/level/${levelCode}/lessons`)}
+            className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
             >
-              Esci
+            <ChevronLeft className="w-5 h-5" />
+            <span className="text-sm">Lezioni</span>
             </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Progress Bar */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Progresso Generale: {progress.completed}/{progress.total}
-            </span>
-            <span className="text-sm text-gray-600">
-              {Math.round((progress.completed / progress.total) * 100)}%
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{
-                width: `${(progress.completed / progress.total) * 100}%`,
-              }}
-            ></div>
+          <div>
+<h1 className="text-xl font-bold text-gray-900">{courseName}</h1>
+<p className="text-sm text-gray-600">
+  Livello {levelCode} - Lezione {lessonNumber} - Esercizio {currentExerciseIndex + 1} di {currentLesson?.exercises.length || 0}
+</p>
           </div>
         </div>
+        <button
+          onClick={() => router.push("/")}
+          className="bg-red-500 hover:bg-gray-200 text-white px-4 py-2 rounded-md"
+        >
+          Esci
+        </button>
       </div>
+    </div>
+  </div>
+
 
       {/* Messaggio di ripresa */}
       {showResumeMessage && (
