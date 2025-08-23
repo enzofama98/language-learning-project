@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Validazione delle variabili d'ambiente
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = "https://yaxftvgvyuibgzrgejfm.supabase.co"; //process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlheGZ0dmd2eXVpYmd6cmdlamZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNDc5NDAsImV4cCI6MjA2MjgyMzk0MH0.m1vbxGyNo3chH70U9YN1KSpY69rrUXgffmWLl9qfsmg"; //process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabaseServiceRoleKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlheGZ0dmd2eXVpYmd6cmdlamZtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzI0Nzk0MCwiZXhwIjoyMDYyODIzOTQwfQ.4cUnMWYQfDrdJYxkthevUgK7iimd4VqSM6L7cfXGGRE"//process.env.SUPABASE_TEST_SERVICE_ROLE_KEY!;
 
 // Debug: verifica che le variabili siano caricate
