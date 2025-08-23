@@ -9,7 +9,7 @@ const unlockCodeSchema = z.object({
   code: z.string().min(3).max(20)
 });
 
-// @ts-ignore
+// @ts-expect-error
 export async function POST(request: Request) {
   try {
     const body = await request.json();

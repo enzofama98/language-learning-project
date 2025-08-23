@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// @ts-ignore
+// @ts-expect-error
 export async function GET() {
   try {
     // Ottieni i cookies dalla richiesta

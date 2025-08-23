@@ -11,7 +11,7 @@ const changePasswordSchema = z.object({
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'La password deve contenere almeno una lettera minuscola, una maiuscola e un numero')
 });
 
-// @ts-ignore
+// @ts-expect-error
 export async function POST(request: NextRequest) {
   return withAuth(request, async (req, user) => {
     try {
