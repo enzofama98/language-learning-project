@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/app/api/user-stats/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withAuth } from '@/lib/auth';
@@ -393,6 +395,7 @@ function findLastActivityDate(accessLogs: any[], exerciseStats: any[], contentSt
 
   return new Date().toISOString();
 }
+
 
 function calculateWeeklyProgress(accessLogs: any[], exerciseStats: any[], contentStats: any[], dailyActivity: any[]): { day: string, minutes: number }[] {
   const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
