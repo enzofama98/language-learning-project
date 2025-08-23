@@ -980,7 +980,7 @@ const renderActionButtons = () => {
           >
             {currentExerciseIndex === currentLesson.exercises.length - 1 
               ? "Completa Lezione →" 
-              : "Avanti →"}
+              : "Avanti"}
           </button>
           )}
         </div>
@@ -992,7 +992,7 @@ const renderActionButtons = () => {
           onClick={goToNextExercise}
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
         >
-          Avanti →
+          Avanti
         </button>
       )}
     </div>
