@@ -8,7 +8,7 @@ const limiter = rateLimit({
   uniqueTokenPerInterval: 500,
 });
 
-// @ts-expect-error
+// @ts-expect-error: descrizione post & get
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withAuth } from '@/lib/auth';
 
-// @ts-expect-error
+// @ts-expect-error: descrizione post & get
 export async function GET(
   request: NextRequest,
   { params }: { params: { tabId: string } }
@@ -116,7 +116,7 @@ export async function GET(
 }
 
 // API per aggiornare il progresso di un contenuto
-// @ts-expect-error
+// @ts-expect-error: descrizione post & get
 export async function POST(
   request: NextRequest,
   { params }: { params: { tabId: string } }
