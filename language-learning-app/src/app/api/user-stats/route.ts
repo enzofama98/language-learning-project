@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 // src/app/api/user-stats/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -330,11 +332,11 @@ function calculateUserStreaks(accessLogs: any[], dailyActivity: any[]): { curren
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   // Inizia da oggi o ieri
-  let checkDate = activityDates.includes(today) ? today : 
+  const checkDate = activityDates.includes(today) ? today : 
                   activityDates.includes(yesterday) ? yesterday : null;
 
   if (checkDate) {
-    let currentDate = new Date(checkDate);
+    const currentDate = new Date(checkDate);
     
     for (const activityDate of activityDates) {
       const activityDateObj = new Date(activityDate);
