@@ -1,18 +1,14 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react/no-unescaped-entities */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withAuth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { tabId: string }; searchParams: URLSearchParams }
+  { params }: { params: { tabId: string } }
 ) {
   return withAuth(request, async (req, user) => {
     try {
-      const { tabId } = context.params;
+      const tabId = params.tabId;
 
       // 1. Verifica che la scheda esista e che l'utente abbia accesso al corso
       const { data: tabInfo, error: tabError } = await supabaseAdmin
@@ -121,12 +117,11 @@ export async function GET(
 // API per aggiornare il progresso di un contenuto
 export async function POST(
   request: NextRequest,
-  context: { params: { tabId: string }; searchParams: URLSearchParams }
+  { params }: { params: { tabId: string } }
 ) {
   return withAuth(request, async (req, user) => {
     try {
       const { contentId, status, percentage } = await req.json();
-      const { tabId } = context.params;
 
       if (!contentId || !status) {
         return NextResponse.json({ 
@@ -134,6 +129,7 @@ export async function POST(
         }, { status: 400 });
       }
 
+      // Valida lo status
       const validStatuses = ['not_started', 'in_progress', 'completed'];
       if (!validStatuses.includes(status)) {
         return NextResponse.json({ 
@@ -141,10 +137,11 @@ export async function POST(
         }, { status: 400 });
       }
 
+      // Prima ottieni la scheda per avere il course_code
       const { data: tabData, error: tabDataError } = await supabaseAdmin
         .from('course_tabs')
         .select('course_code')
-        .eq('id', tabId)
+        .eq('id', params.tabId)
         .single();
 
       if (tabDataError || !tabData) {
@@ -153,11 +150,12 @@ export async function POST(
         }, { status: 404 });
       }
 
+      // Verifica che il contenuto appartenga alla scheda
       const { data: contentInfo, error: contentError } = await supabaseAdmin
         .from('course_content')
         .select('id')
         .eq('id', contentId)
-        .eq('tab_id', tabId)
+        .eq('tab_id', params.tabId)
         .eq('active', true)
         .single();
 
@@ -167,6 +165,7 @@ export async function POST(
         }, { status: 404 });
       }
 
+      // Verifica accesso dell'utente al corso
       const { data: hasAccess, error: accessError } = await supabaseAdmin
         .from('codici_sbloccati')
         .select('id')
@@ -180,6 +179,7 @@ export async function POST(
         }, { status: 403 });
       }
 
+      // Aggiorna o crea il record di progresso
       const progressData = {
         user_id: user.id,
         content_id: contentId,
