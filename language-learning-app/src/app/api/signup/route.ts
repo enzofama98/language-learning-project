@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// @ts-expect-error: descrizione post & get
 export async function POST(request: Request) {
   const { email, password, code } = await request.json();
 
