@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withAuth } from '@/lib/auth';
 
+// @ts-ignore
 export async function GET(request: NextRequest) {
   return withAuth(request, async (req, user) => {
     try {

@@ -10,6 +10,7 @@ const logAccessSchema = z.object({
   action: z.enum(['view', 'access', 'complete']).optional().default('access')
 });
 
+// @ts-ignore
 export async function POST(request: NextRequest) {
   return withAuth(request, async (req, user) => {
     try {

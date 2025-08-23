@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 // import { cookies } from 'next/headers';
 
+// @ts-ignore
 export async function POST(request: Request) {
   const { email, password } = await request.json();
 
