@@ -1,0 +1,88 @@
+Dato il seguente schema della tabella anagrafica_esercizi dell'applicazione che ti ho fornito nella knowledge base
+
+create table public.anagrafica_esercizi (
+
+  id uuid not null default gen_random_uuid (),
+
+  language_code character varying(20) not null,
+
+  lezione integer not null,
+
+  text text not null,
+
+  tipo_esercizio character varying(50) not null,
+
+  descrizione text null,
+
+  frase text null,
+
+  opzionali jsonb null default '{}'::jsonb,
+
+  tipo_validazione character varying(20) null default 'exact'::character varying,
+
+  soluzione text not null,
+
+  validazione jsonb null default '{}'::jsonb,
+
+  active boolean null default true,
+
+  created_at timestamp with time zone null default now(),
+
+  updated_at timestamp with time zone null default now(),
+
+  livello character varying(255) null,
+
+  constraint anagrafica_esercizi_pkey1 primary key (id),
+
+  constraint fk_esercizi_codici foreign KEY (language_code) references anagrafica_codici (codice) on delete CASCADE
+
+) TABLESPACE pg_default;
+
+create index IF not exists idx_anagrafica_esercizi_active on public.anagrafica_esercizi using btree (active) TABLESPACE pg_default;
+
+create index IF not exists idx_anagrafica_esercizi_language on public.anagrafica_esercizi using btree (language_code) TABLESPACE pg_default;
+
+create index IF not exists idx_anagrafica_esercizi_lezione on public.anagrafica_esercizi using btree (lezione) TABLESPACE pg_default;
+
+create index IF not exists idx_anagrafica_esercizi_order on public.anagrafica_esercizi using btree (language_code, lezione, created_at) TABLESPACE pg_default;
+
+create trigger update_anagrafica_esercizi_updated_at BEFORE
+
+update on anagrafica_esercizi for EACH row
+
+execute FUNCTION update_updated_at_column ();
+
+Data la seguente riga di esempio
+
+{"idx":1,"id":"fea839ea-7bc7-4983-ae00-a875d2206894","language_code":"PYTHON101","lezione":1,"text":"Completa la frase","tipoesercizio":"Completa la frase","descrizione":"Tocca la parola corretta per completare la frase.","frase":"Good __!","opzionali":"{"opzioni": ["morning", "thank", "excuse", "go"]}","tipo_validazione":"exact","soluzione":"morning","validazione":"{}","active":true,"created_at":"2025-07-02 20:02:03.064871+00","updated_at":"2025-08-02 12:16:00.096973+00","livello":"A1"}
+
+Che corrisponde al seguente chunk del file word
+
+STEP 2 – Completa la frase Istruzione: Tocca la parola corretta per completare la frase. Frase: "Good ___!" Opzioni: morning • thank • excuse • go Pulsante: Controlla Soluzione: morning
+
+Trasforma il file in allegato affinchè possa essere inserito all'interno della tabella fornita così come nell'esempio.
+
+Gli esercizi devono essere mappati nelle seguenti tipologie di esercizi:
+
+- completa la frase
+
+- seleziona ciò che senti
+
+- traduci
+
+- seleziona le coppie
+
+se hai qualche dubbio su come mappare un esercizio presente nel file in allegato scrivimelo.
+
+Nota bene, per gli esercizi di tipo seleziona le coppie,è importante che venga seguita la struttura descritta nel seguente esmepio di insert SQL
+INSERT INTO anagrafica_esercizi 
+(language_code, lezione, text, tipo_esercizio, descrizione, frase, opzionali, tipo_validazione, soluzione, active, livello) 
+VALUES
+('FRA4ITA', 2, 'Abbina le coppie', 'seleziona le coppie', 'Trascina ogni espressione italiana accanto alla sua traduzione francese.', 'Abbina le espressioni',
+'{"coppie_mischiate": ["Je m''appelle Giulia","Mi chiamo Giulia","Je viens de Turin","Vengo da Torino","Nous avons quinze ans","Abbiamo quindici anni","Vous avez dix ans","Avete dieci anni","Il vient d''Espagne","Lui viene dalla Spagna"]}', 
+'exact',
+'{"Mi chiamo Giulia":"Je m''appelle Giulia","Vengo da Torino":"Je viens de Turin","Abbiamo quindici anni":"Nous avons quinze ans","Avete dieci anni":"Vous avez dix ans","Lui viene dalla Spagna":"Il vient d''Espagne"}', 
+true, 'A1');
+
+Inoltre negli esercizi di tipo seleziona ciò che senti:
+- le opzioni selezionabili non sono mappate dentro "opzioni" ma dentro "banca_parole".
