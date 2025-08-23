@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withAuth } from '@/lib/auth';
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { tabId: string }; searchParams: URLSearchParams }
-) {
+export async function GET(request: NextRequest, context: any) {
   return withAuth(request, async (req, user) => {
     try {
       const { tabId } = context.params;
@@ -101,10 +98,7 @@ export async function GET(
   });
 }
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { tabId: string }; searchParams: URLSearchParams }
-) {
+export async function POST(request: NextRequest, context: any) {
   return withAuth(request, async (req, user) => {
     try {
       const { tabId } = context.params;
