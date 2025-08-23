@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { withAuth } from '@/lib/auth';
 
-// @ts-expect-error: descrizione post & get
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tabId: string } }
+  context: { params: { tabId: string }; searchParams: URLSearchParams }
 ) {
   return withAuth(request, async (req, user) => {
     try {
-      const tabId = params.tabId;
+      const { tabId } = context.params;
 
-      // 1. Verifica che la scheda esista e che l'utente abbia accesso al corso
       const { data: tabInfo, error: tabError } = await supabaseAdmin
         .from('course_tabs')
         .select(`
@@ -25,12 +23,9 @@ export async function GET(
         .single();
 
       if (tabError || !tabInfo) {
-        return NextResponse.json({ 
-          error: 'Scheda non trovata' 
-        }, { status: 404 });
+        return NextResponse.json({ error: 'Scheda non trovata' }, { status: 404 });
       }
 
-      // 2. Verifica accesso dell'utente al corso
       const { data: hasAccess, error: accessError } = await supabaseAdmin
         .from('codici_sbloccati')
         .select('id')
@@ -39,12 +34,9 @@ export async function GET(
         .single();
 
       if (accessError || !hasAccess) {
-        return NextResponse.json({ 
-          error: 'Accesso al corso non autorizzato' 
-        }, { status: 403 });
+        return NextResponse.json({ error: 'Accesso al corso non autorizzato' }, { status: 403 });
       }
 
-      // 3. Ottieni i contenuti della scheda con progresso utente
       const { data: contents, error: contentsError } = await supabaseAdmin
         .from('course_content')
         .select(`
@@ -66,12 +58,9 @@ export async function GET(
 
       if (contentsError) {
         console.error('Errore caricamento contenuti:', contentsError);
-        return NextResponse.json({ 
-          error: 'Errore nel caricamento dei contenuti' 
-        }, { status: 500 });
+        return NextResponse.json({ error: 'Errore nel caricamento dei contenuti' }, { status: 500 });
       }
 
-      // 4. Processa i contenuti per includere il progresso utente
       const processedContents = contents?.map(content => ({
         id: content.id,
         title: content.title,
@@ -83,13 +72,12 @@ export async function GET(
         last_accessed_at: content.user_progress?.[0]?.last_accessed_at || null
       })) || [];
 
-      // 5. Calcola statistiche della scheda
       const totalContents = processedContents.length;
       const completedContents = processedContents.filter(c => c.user_progress_status === 'completed').length;
       const inProgressContents = processedContents.filter(c => c.user_progress_status === 'in_progress').length;
       const tabProgress = totalContents > 0 ? Math.round((completedContents / totalContents) * 100) : 0;
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         contents: processedContents,
         tab_info: {
           id: tabInfo.id,
@@ -108,66 +96,51 @@ export async function GET(
 
     } catch (error) {
       console.error('Errore generale API contents:', error);
-      return NextResponse.json({ 
-        error: 'Errore interno del server' 
-      }, { status: 500 });
+      return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 });
     }
   });
 }
 
-// API per aggiornare il progresso di un contenuto
-// @ts-expect-error: descrizione post & get
 export async function POST(
   request: NextRequest,
-  { params }: { params: { tabId: string } }
+  context: { params: { tabId: string }; searchParams: URLSearchParams }
 ) {
   return withAuth(request, async (req, user) => {
     try {
+      const { tabId } = context.params;
       const { contentId, status, percentage } = await req.json();
 
       if (!contentId || !status) {
-        return NextResponse.json({ 
-          error: 'contentId e status sono richiesti' 
-        }, { status: 400 });
+        return NextResponse.json({ error: 'contentId e status sono richiesti' }, { status: 400 });
       }
 
-      // Valida lo status
       const validStatuses = ['not_started', 'in_progress', 'completed'];
       if (!validStatuses.includes(status)) {
-        return NextResponse.json({ 
-          error: 'Status non valido' 
-        }, { status: 400 });
+        return NextResponse.json({ error: 'Status non valido' }, { status: 400 });
       }
 
-      // Prima ottieni la scheda per avere il course_code
       const { data: tabData, error: tabDataError } = await supabaseAdmin
         .from('course_tabs')
         .select('course_code')
-        .eq('id', params.tabId)
+        .eq('id', tabId)
         .single();
 
       if (tabDataError || !tabData) {
-        return NextResponse.json({ 
-          error: 'Scheda non trovata' 
-        }, { status: 404 });
+        return NextResponse.json({ error: 'Scheda non trovata' }, { status: 404 });
       }
 
-      // Verifica che il contenuto appartenga alla scheda
       const { data: contentInfo, error: contentError } = await supabaseAdmin
         .from('course_content')
         .select('id')
         .eq('id', contentId)
-        .eq('tab_id', params.tabId)
+        .eq('tab_id', tabId)
         .eq('active', true)
         .single();
 
       if (contentError || !contentInfo) {
-        return NextResponse.json({ 
-          error: 'Contenuto non trovato' 
-        }, { status: 404 });
+        return NextResponse.json({ error: 'Contenuto non trovato' }, { status: 404 });
       }
 
-      // Verifica accesso dell'utente al corso
       const { data: hasAccess, error: accessError } = await supabaseAdmin
         .from('codici_sbloccati')
         .select('id')
@@ -176,12 +149,9 @@ export async function POST(
         .single();
 
       if (accessError || !hasAccess) {
-        return NextResponse.json({ 
-          error: 'Accesso non autorizzato' 
-        }, { status: 403 });
+        return NextResponse.json({ error: 'Accesso non autorizzato' }, { status: 403 });
       }
 
-      // Aggiorna o crea il record di progresso
       const progressData = {
         user_id: user.id,
         content_id: contentId,
@@ -193,20 +163,16 @@ export async function POST(
 
       const { data: updatedProgress, error: progressError } = await supabaseAdmin
         .from('user_progress')
-        .upsert(progressData, { 
-          onConflict: 'user_id,content_id' 
-        })
+        .upsert(progressData, { onConflict: 'user_id,content_id' })
         .select()
         .single();
 
       if (progressError) {
         console.error('Errore aggiornamento progresso:', progressError);
-        return NextResponse.json({ 
-          error: 'Errore nell\'aggiornamento del progresso' 
-        }, { status: 500 });
+        return NextResponse.json({ error: 'Errore nell\'aggiornamento del progresso' }, { status: 500 });
       }
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
         progress: updatedProgress,
         message: `Progresso aggiornato a: ${status}`
@@ -214,9 +180,7 @@ export async function POST(
 
     } catch (error) {
       console.error('Errore aggiornamento progresso:', error);
-      return NextResponse.json({ 
-        error: 'Errore interno del server' 
-      }, { status: 500 });
+      return NextResponse.json({ error: 'Errore interno del server' }, { status: 500 });
     }
   });
 }
