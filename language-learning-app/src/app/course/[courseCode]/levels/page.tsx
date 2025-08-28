@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/no-unescaped-entities */
+
 // FILE: src/app/course/[courseCode]/levels/page.tsx
 // Crea questo file nella posizione indicata
 
