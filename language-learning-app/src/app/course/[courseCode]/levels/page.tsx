@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react/no-unescaped-entities */
-
 // FILE: src/app/course/[courseCode]/levels/page.tsx
 // Crea questo file nella posizione indicata
 
@@ -215,7 +211,7 @@ export default function LevelsOverviewPage() {
           totalExercises += totalCount;
 
           // Un livello è bloccato se il precedente non è completato almeno al 80%
-          const isLocked = !previousLevelCompleted;
+          const isLocked = false //!previousLevelCompleted;
           
           // Aggiorna lo stato per il prossimo livello (80% di completamento)
           if (!isLocked) {
@@ -246,10 +242,10 @@ export default function LevelsOverviewPage() {
   };
 
   const handleLevelClick = (level: LevelInfo) => {
-    if (level.is_locked) {
-      alert("Completa almeno l'80% del livello precedente per sbloccare questo livello!");
-      return;
-    }
+    // if (level.is_locked) {
+    //   alert("Completa almeno l'80% del livello precedente per sbloccare questo livello!");
+    //   return;
+    // }
 
     // Naviga alla pagina delle lezioni per questo livello
     router.push(`/course/${courseCode}/level/${level.level}/lessons`);
@@ -433,7 +429,6 @@ export default function LevelsOverviewPage() {
             Sistema di progressione
           </h4>
           <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>• Completa almeno l'80% di un livello per sbloccare il successivo</li>
             <li>• Ogni livello contiene esercizi progressivamente più difficili</li>
             <li>• Puoi sempre rivedere i livelli completati per ripassare</li>
             <li>• I livelli seguono lo standard CEFR (Common European Framework)</li>
