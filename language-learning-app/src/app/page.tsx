@@ -551,7 +551,7 @@ const handleButtonClick = async (button: Button) => {
                     </div>
                   </div>
                 )}
-                {userStats.totalContents && (
+                {/* {userStats.totalContents && (
                   <div className="text-center">
                     <div className="text-lg font-semibold text-gray-900 dark:text-white">
                       {userStats.completedContents}/{userStats.totalContents}
@@ -560,7 +560,7 @@ const handleButtonClick = async (button: Button) => {
                       Contenuti
                     </div>
                   </div>
-                )}
+                )} */}
                 {userStats.totalSessions && (
                   <div className="text-center">
                     <div className="text-lg font-semibold text-gray-900 dark:text-white">
