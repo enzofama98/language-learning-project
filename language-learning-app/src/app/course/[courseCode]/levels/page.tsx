@@ -6,7 +6,7 @@
 // Crea questo file nella posizione indicata
 
 "use client";
-
+ 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
