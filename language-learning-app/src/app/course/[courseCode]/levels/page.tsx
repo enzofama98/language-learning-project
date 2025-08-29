@@ -390,7 +390,7 @@ export default function LevelsOverviewPage() {
                 </p>
 
                 {/* Progress */}
-                {!level.is_locked && (
+                {/* {!level.is_locked && (
                   <>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
                       <div
@@ -415,7 +415,7 @@ export default function LevelsOverviewPage() {
                       </span>
                     </div>
                   </>
-                )}
+                )} */}
 
                 {/* Navigation arrow */}
                 {!level.is_locked && (
