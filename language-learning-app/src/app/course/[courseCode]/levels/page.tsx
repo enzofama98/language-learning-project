@@ -1,9 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react/no-unescaped-entities */
-
-// FILE: src/app/course/[courseCode]/levels/page.tsx
-// Crea questo file nella posizione indicata
+// FILE: src/app/course/[courseCode]/levels/page.tsx (VERSIONE AGGIORNATA CON TRADUZIONI)
+// Sostituisci il contenuto del file esistente con questo
 
 "use client";
  
@@ -22,6 +18,8 @@ import {
   Award,
   TrendingUp
 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
+import LanguageSelector from "@/app/components/LanguageSelector";
 
 interface LevelInfo {
   level: string;
@@ -39,16 +37,6 @@ interface User {
   email: string;
 }
 
-// Descrizioni dei livelli CEFR
-const LEVEL_DESCRIPTIONS: Record<string, string> = {
-  'A1': 'Livello principiante - Impara le basi fondamentali',
-  'A2': 'Livello elementare - Costruisci frasi semplici',
-  'B1': 'Livello intermedio - Conversazioni quotidiane',
-  'B2': 'Livello intermedio avanzato - Argomenti complessi',
-  'C1': 'Livello avanzato - Padronanza della lingua',
-  'C2': 'Livello esperto - Competenza nativa'
-};
-
 // Colori per i livelli
 const LEVEL_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   'A1': { bg: 'bg-green-100', border: 'border-green-300', text: 'text-green-700' },
@@ -63,6 +51,7 @@ export default function LevelsOverviewPage() {
   const params = useParams();
   const router = useRouter();
   const courseCode = params?.courseCode as string;
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
   const [levels, setLevels] = useState<LevelInfo[]>([]);
@@ -71,13 +60,25 @@ export default function LevelsOverviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [overallProgress, setOverallProgress] = useState({ completed: 0, total: 0 });
 
+  // Descrizioni dei livelli CEFR tradotte
+  const getLevelDescription = (level: string): string => {
+    switch (level) {
+      case 'A1': return t('levelA1Desc');
+      case 'A2': return t('levelA2Desc');
+      case 'B1': return t('levelB1Desc');
+      case 'B2': return t('levelB2Desc');
+      case 'C1': return t('levelC1Desc');
+      case 'C2': return t('levelC2Desc');
+      default: return '';
+    }
+  };
+
   useEffect(() => {
     initializePage();
   }, [courseCode]);
 
   const initializePage = async () => {
     try {
-      // Verifica autenticazione
       const { data: { session }, error: authError } = await supabase.auth.getSession();
 
       if (authError || !session) {
@@ -90,21 +91,17 @@ export default function LevelsOverviewPage() {
         email: session.user.email || "",
       });
 
-      // Verifica accesso al corso
       const hasAccess = await checkCourseAccess(session.user.id, courseCode);
       if (!hasAccess) {
-        setError("Non hai accesso a questo corso");
+        setError(t('noAccess'));
         return;
       }
 
-      // Carica informazioni corso
       await loadCourseInfo();
-
-      // Carica livelli e progresso
       await loadLevelsOverview(session.user.id);
     } catch (err) {
       console.error("Errore inizializzazione:", err);
-      setError("Errore durante il caricamento del corso");
+      setError(t('courseLoadError'));
     } finally {
       setLoading(false);
     }
@@ -143,7 +140,6 @@ export default function LevelsOverviewPage() {
 
   const loadLevelsOverview = async (userId: string) => {
     try {
-      // Ottieni tutti i livelli disponibili con i loro esercizi
       const { data: exercises, error: exercisesError } = await supabase
         .from("anagrafica_esercizi")
         .select("id, livello, lezione")
@@ -152,7 +148,6 @@ export default function LevelsOverviewPage() {
 
       if (exercisesError) throw exercisesError;
 
-      // Ottieni il progresso dell'utente
       const { data: progress, error: progressError } = await supabase
         .from("exercise_progress")
         .select("exercise_id, completed")
@@ -161,12 +156,10 @@ export default function LevelsOverviewPage() {
 
       if (progressError) throw progressError;
 
-      // Crea set di esercizi completati
       const completedExercises = new Set(
         progress?.map(p => p.exercise_id) || []
       );
 
-      // Organizza per livelli
       const levelMap = new Map<string, { 
         exercises: string[], 
         lessons: Set<number>,
@@ -192,10 +185,8 @@ export default function LevelsOverviewPage() {
         }
       });
 
-      // Ordine dei livelli CEFR
       const levelOrder = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
       
-      // Crea array di livelli con statistiche
       let totalCompleted = 0;
       let totalExercises = 0;
       let previousLevelCompleted = true;
@@ -214,10 +205,8 @@ export default function LevelsOverviewPage() {
           totalCompleted += completedCount;
           totalExercises += totalCount;
 
-          // Un livello è bloccato se il precedente non è completato almeno al 80%
-          const isLocked = false //!previousLevelCompleted;
+          const isLocked = false; // Mantieni sempre sbloccato come nel codice originale
           
-          // Aggiorna lo stato per il prossimo livello (80% di completamento)
           if (!isLocked) {
             previousLevelCompleted = progressPercentage >= 80;
           }
@@ -230,7 +219,7 @@ export default function LevelsOverviewPage() {
             is_locked: isLocked,
             is_completed: isCompleted,
             progress_percentage: progressPercentage,
-            description: LEVEL_DESCRIPTIONS[level]
+            description: getLevelDescription(level)
           };
         });
 
@@ -246,12 +235,6 @@ export default function LevelsOverviewPage() {
   };
 
   const handleLevelClick = (level: LevelInfo) => {
-    // if (level.is_locked) {
-    //   alert("Completa almeno l'80% del livello precedente per sbloccare questo livello!");
-    //   return;
-    // }
-
-    // Naviga alla pagina delle lezioni per questo livello
     router.push(`/course/${courseCode}/level/${level.level}/lessons`);
   };
 
@@ -260,7 +243,7 @@ export default function LevelsOverviewPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">Caricamento livelli...</p>
+          <p className="text-xl text-gray-600">{t('loadingLevels')}</p>
         </div>
       </div>
     );
@@ -270,14 +253,14 @@ export default function LevelsOverviewPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Errore</h2>
+          <div className="text-6xl mb-4">⚠</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('error')}</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => router.push("/")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
           >
-            Torna alla Home
+            {t('backToHome')}
           </button>
         </div>
       </div>
@@ -299,16 +282,19 @@ export default function LevelsOverviewPage() {
                 {courseName}
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Seleziona il tuo livello
+                {t('selectLevel')}
               </p>
             </div>
-            <button
-              onClick={() => router.push("/")}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
-            >
-              <Home className="w-4 h-4" />
-              <span>Home</span>
-            </button>
+            <div className="flex items-center gap-4">
+              <LanguageSelector />
+              <button
+                onClick={() => router.push("/")}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                <span>{t('home')}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -319,7 +305,7 @@ export default function LevelsOverviewPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-500" />
-              Progresso Totale del Corso
+              {t('totalCourseProgress')}
             </h2>
             <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {overallPercentage}%
@@ -332,7 +318,7 @@ export default function LevelsOverviewPage() {
             ></div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            {overallProgress.completed} di {overallProgress.total} esercizi completati
+            {overallProgress.completed} {t('exercisesCompleted').replace('esercizi completati', '')} {overallProgress.total} {t('exercisesCompleted')}
           </p>
         </div>
       </div>
@@ -375,7 +361,7 @@ export default function LevelsOverviewPage() {
                         Livello {level.level}
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {level.total_lessons} lezioni
+                        {level.total_lessons} {t('lessons')}
                       </p>
                     </div>
                   </div>
@@ -388,34 +374,6 @@ export default function LevelsOverviewPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {level.description}
                 </p>
-
-                {/* Progress */}
-                {/* {!level.is_locked && (
-                  <>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          level.is_completed 
-                            ? "bg-green-600 dark:bg-green-500" 
-                            : "bg-blue-600 dark:bg-blue-500"
-                        }`}
-                        style={{ width: `${level.progress_percentage}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {level.completed_exercises}/{level.total_exercises} esercizi
-                      </span>
-                      <span className={`font-medium ${
-                        level.is_completed 
-                          ? "text-green-600 dark:text-green-400" 
-                          : "text-blue-600 dark:text-blue-400"
-                      }`}>
-                        {level.progress_percentage}%
-                      </span>
-                    </div>
-                  </>
-                )} */}
 
                 {/* Navigation arrow */}
                 {!level.is_locked && (
@@ -430,12 +388,12 @@ export default function LevelsOverviewPage() {
         <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
           <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
             <Target className="w-5 h-5" />
-            Sistema di progressione
+            {t('progressionSystem')}
           </h4>
           <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>• Ogni livello contiene esercizi progressivamente più difficili</li>
-            <li>• Puoi sempre rivedere i livelli completati per ripassare</li>
-            <li>• I livelli seguono lo standard CEFR (Common European Framework)</li>
+            <li>• {t('progressionDesc1')}</li>
+            <li>• {t('progressionDesc2')}</li>
+            <li>• {t('progressionDesc3')}</li>
           </ul>
         </div>
       </div>
