@@ -1,3 +1,6 @@
+// FILE: src/app/page.tsx (VERSIONE AGGIORNATA CON TRADUZIONI)
+// Sostituisci il contenuto del file esistente con questo
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -16,6 +19,8 @@ import {
   Lock,
   ChevronRight,
 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
+import LanguageSelector from "@/app/components/LanguageSelector";
 
 interface Button {
   id: string;
@@ -54,7 +59,6 @@ interface UserStats {
     day: string;
     minutes: number;
   }[];
-  // Statistiche extra
   totalExercises?: number;
   completedExercises?: number;
   totalContents?: number;
@@ -73,6 +77,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadUserData();
@@ -96,7 +101,6 @@ export default function HomePage() {
 
       setUser(userData);
 
-      // Carica i corsi disponibili usando l'API esistente
       const token = session.access_token;
       const response = await fetch("/api/user-buttons", {
         headers: {
@@ -106,17 +110,16 @@ export default function HomePage() {
       });
 
       if (!response.ok) {
-        throw new Error("Errore nel caricamento dei corsi");
+        throw new Error(t('courseLoadError'));
       }
 
       const buttonsData = await response.json();
       setButtons(buttonsData.buttons || []);
 
-      // Carica le statistiche utente (in parallelo)
       loadUserStats(token);
     } catch (err) {
       console.error("Errore caricamento dati:", err);
-      setError(err instanceof Error ? err.message : "Errore sconosciuto");
+      setError(err instanceof Error ? err.message : t('error'));
     } finally {
       setLoading(false);
     }
@@ -126,7 +129,6 @@ export default function HomePage() {
     try {
       setStatsLoading(true);
 
-      // Prova a caricare le statistiche dall'API
       const response = await fetch("/api/user-stats", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -140,7 +142,6 @@ export default function HomePage() {
         setUserStats(statsData);
       } else {
         console.warn("API statistiche non disponibile, uso dati mock");
-        // Fallback con dati mock basati sui corsi caricati
         const mockStats: UserStats = {
           totalCourses: buttons.length,
           completedCourses: Math.floor(
@@ -154,13 +155,13 @@ export default function HomePage() {
           longestStreak: 12,
           lastActivityDate: new Date().toISOString().split("T")[0],
           weeklyProgress: [
-            { day: "Lun", minutes: 45 },
-            { day: "Mar", minutes: 30 },
-            { day: "Mer", minutes: 60 },
-            { day: "Gio", minutes: 25 },
-            { day: "Ven", minutes: 40 },
-            { day: "Sab", minutes: 35 },
-            { day: "Dom", minutes: 50 },
+            { day: t('dayMon'), minutes: 45 },
+            { day: t('dayTue'), minutes: 30 },
+            { day: t('dayWed'), minutes: 60 },
+            { day: t('dayThu'), minutes: 25 },
+            { day: t('dayFri'), minutes: 40 },
+            { day: t('daySat'), minutes: 35 },
+            { day: t('daySun'), minutes: 50 },
           ],
           totalExercises: 150,
           completedExercises: 87,
@@ -175,7 +176,6 @@ export default function HomePage() {
     } catch (err) {
       console.error("Errore caricamento statistiche:", err);
 
-      // Fallback con dati mock minimi
       const fallbackStats: UserStats = {
         totalCourses: buttons.length,
         completedCourses: 0,
@@ -187,7 +187,7 @@ export default function HomePage() {
         weeklyProgress: Array(7)
           .fill(0)
           .map((_, i) => ({
-            day: ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"][i],
+            day: [t('dayMon'), t('dayTue'), t('dayWed'), t('dayThu'), t('dayFri'), t('daySat'), t('daySun')][i],
             minutes: 0,
           })),
         totalExercises: 0,
@@ -203,93 +203,86 @@ export default function HomePage() {
   };
 
   const loadAllCoursesProgress = async () => {
-  try {
-    if (!user) return;
+    try {
+      if (!user) return;
 
-    // Per ogni corso abilitato, chiama la funzione SQL get_course_progress
-    const progressPromises = buttons
-      .filter(button => button.enabled)
-      .map(async (button) => {
-        try {
-          const { data, error } = await supabase.rpc('get_course_progress', {
-            p_user_id: user.id,
-            p_language_code: button.language_code
-          });
+      const progressPromises = buttons
+        .filter(button => button.enabled)
+        .map(async (button) => {
+          try {
+            const { data, error } = await supabase.rpc('get_course_progress', {
+              p_user_id: user.id,
+              p_language_code: button.language_code
+            });
 
-          if (error) {
-            console.error(`Errore progresso per ${button.language_code}:`, error);
+            if (error) {
+              console.error(`Errore progresso per ${button.language_code}:`, error);
+              return null;
+            }
+
+            return {
+              language_code: button.language_code,
+              progress: data
+            };
+          } catch (err) {
+            console.error(`Errore caricamento progresso ${button.language_code}:`, err);
             return null;
           }
+        });
 
-          return {
-            language_code: button.language_code,
-            progress: data
-          };
-        } catch (err) {
-          console.error(`Errore caricamento progresso ${button.language_code}:`, err);
-          return null;
+      const results = await Promise.all(progressPromises);
+      
+      const progressMap = new Map<string, CourseProgress>();
+      results.forEach(result => {
+        if (result && result.progress) {
+          progressMap.set(result.language_code, result.progress);
         }
       });
 
-    const results = await Promise.all(progressPromises);
-    
-    // Crea mappa del progresso
-    const progressMap = new Map<string, CourseProgress>();
-    results.forEach(result => {
-      if (result && result.progress) {
-        progressMap.set(result.language_code, result.progress);
+      setCourseProgressMap(progressMap);
+    } catch (err) {
+      console.error("Errore caricamento progresso corsi:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (user && buttons.length > 0) {
+      loadAllCoursesProgress();
+    }
+  }, [user, buttons]);
+
+  const handleButtonClick = async (button: Button) => {
+    if (!button.enabled) return;
+
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token) {
+        router.push("/login");
+        return;
       }
-    });
 
-    setCourseProgressMap(progressMap);
-  } catch (err) {
-    console.error("Errore caricamento progresso corsi:", err);
-  }
-};
+      const response = await fetch("/api/log-access", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          language_code: button.language_code,
+          button_id: button.id,
+        }),
+      });
 
-useEffect(() => {
-  if (user && buttons.length > 0) {
-    loadAllCoursesProgress();
-  }
-}, [user, buttons]);
+      if (!response.ok) {
+        throw new Error("Accesso non autorizzato");
+      }
 
-// FILE: src/app/page.tsx
-// Trova la funzione handleButtonClick e sostituiscila con questa:
-
-const handleButtonClick = async (button: Button) => {
-  if (!button.enabled) return;
-
-  try {
-    const token = (await supabase.auth.getSession()).data.session?.access_token;
-    if (!token) {
-      router.push("/login");
-      return;
+      router.push(`/course/${button.language_code}/levels`);
+    } catch (err) {
+      console.error("Errore accesso corso:", err);
+      alert("Errore nell'accesso al corso. Riprova.");
     }
-
-    // Log dell'accesso
-    const response = await fetch("/api/log-access", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        language_code: button.language_code,
-        button_id: button.id,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Accesso non autorizzato");
-    }
-
-    // MODIFICA: Redirect alla pagina dei livelli invece che alle lezioni
-    router.push(`/course/${button.language_code}/levels`);
-  } catch (err) {
-    console.error("Errore accesso corso:", err);
-    alert("Errore nell'accesso al corso. Riprova.");
-  }
-};
+  };
 
   if (loading) {
     return (
@@ -297,7 +290,7 @@ const handleButtonClick = async (button: Button) => {
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-xl text-gray-600 dark:text-gray-300">
-            Caricamento...
+            {t('loading')}
           </p>
         </div>
       </div>
@@ -310,14 +303,14 @@ const handleButtonClick = async (button: Button) => {
         <div className="text-center">
           <div className="text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Errore
+            {t('error')}
           </h2>
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
           >
-            Riprova
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -334,21 +327,26 @@ const handleButtonClick = async (button: Button) => {
         <div className="mb-8 flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              I Tuoi Corsi
+              {t('yourCourses')}
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
-              Benvenuto, {user?.email}! Seleziona un corso per iniziare.
+              {t('welcome')}, {user?.email}! {t('selectCourse')}
             </p>
           </div>
           
-          {/* Bottone I nostri libri */}
-          <button
-            onClick={() => router.push("/books")}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
-          >
-            <BookIcon className="w-5 h-5" />
-            <span className="font-medium">I nostri libri</span>
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Selettore lingua */}
+            <LanguageSelector />
+            
+            {/* Bottone I nostri libri */}
+            <button
+              onClick={() => router.push("/books")}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+            >
+              <BookIcon className="w-5 h-5" />
+              <span className="font-medium">{t('ourBooks')}</span>
+            </button>
+          </div>
         </div>
 
         {/* Statistiche Corsi Compatte */}
@@ -359,7 +357,7 @@ const handleButtonClick = async (button: Button) => {
                 {enabledCount}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                Disponibili
+                {t('available')}
               </div>
             </div>
             <div>
@@ -367,7 +365,7 @@ const handleButtonClick = async (button: Button) => {
                 {disabledCount}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                Bloccati
+                {t('blocked')}
               </div>
             </div>
             <div>
@@ -375,7 +373,7 @@ const handleButtonClick = async (button: Button) => {
                 {buttons.length}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                Totali
+                {t('total')}
               </div>
             </div>
           </div>
@@ -384,7 +382,7 @@ const handleButtonClick = async (button: Button) => {
         {/* Dashboard Progressi Utente */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8 border border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <Trophy className="w-5 h-5 mr-2 text-yellow-500" />I Tuoi Progressi
+            <Trophy className="w-5 h-5 mr-2 text-yellow-500" />{t('yourProgress')}
             {statsLoading && (
               <div className="ml-3 w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
             )}
@@ -397,14 +395,14 @@ const handleButtonClick = async (button: Button) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      Ore di Studio
+                      {t('studyHours')}
                     </p>
                     <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">
                       {userStats.totalHoursStudied}h
                     </p>
                     {userStats.averageMinutesPerDay && (
                       <p className="text-xs text-blue-600 dark:text-blue-400">
-                        {Math.round(userStats.averageMinutesPerDay)}min/giorno
+                        {Math.round(userStats.averageMinutesPerDay)}{t('minutesPerDay')}
                       </p>
                     )}
                   </div>
@@ -417,7 +415,7 @@ const handleButtonClick = async (button: Button) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                      Completati
+                      {t('completed')}
                     </p>
                     <p className="text-2xl font-bold text-green-800 dark:text-green-200">
                       {userStats.completedCourses}/{userStats.totalCourses}
@@ -442,13 +440,13 @@ const handleButtonClick = async (button: Button) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                      Streak Attuale
+                      {t('currentStreak')}
                     </p>
                     <p className="text-2xl font-bold text-orange-800 dark:text-orange-200">
                       {userStats.currentStreak}
                     </p>
                     <p className="text-xs text-orange-600 dark:text-orange-400">
-                      giorni (max: {userStats.longestStreak})
+                      {t('days')} ({t('max')}: {userStats.longestStreak})
                     </p>
                   </div>
                   <Target className="w-8 h-8 text-orange-500" />
@@ -460,12 +458,12 @@ const handleButtonClick = async (button: Button) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      Ultima Attività
+                      {t('lastActivity')}
                     </p>
                     <p className="text-sm font-bold text-purple-800 dark:text-purple-200">
                       {userStats.lastActivityDate ===
                       new Date().toISOString().split("T")[0]
-                        ? "Oggi"
+                        ? t('today')
                         : userStats.lastActivityDate}
                     </p>
                     <p className="text-xs text-purple-600 dark:text-purple-400">
@@ -489,14 +487,14 @@ const handleButtonClick = async (button: Button) => {
             <div className="mt-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3 flex items-center">
                 <TrendingUp className="w-4 h-4 mr-2 text-blue-500" />
-                Attività Settimanale
+                {t('weeklyActivity')}
                 <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
                   (
                   {userStats.weeklyProgress.reduce(
                     (sum, day) => sum + day.minutes,
                     0
                   )}{" "}
-                  min totali)
+                  {t('totalMinutes')})
                 </span>
               </h3>
               <div className="flex items-end space-x-2 h-32 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
@@ -547,27 +545,17 @@ const handleButtonClick = async (button: Button) => {
                       {userStats.completedExercises}/{userStats.totalExercises}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Esercizi
+                      {t('exercises')}
                     </div>
                   </div>
                 )}
-                {/* {userStats.totalContents && (
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {userStats.completedContents}/{userStats.totalContents}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Contenuti
-                    </div>
-                  </div>
-                )} */}
                 {userStats.totalSessions && (
                   <div className="text-center">
                     <div className="text-lg font-semibold text-gray-900 dark:text-white">
                       {userStats.totalSessions}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Sessioni
+                      {t('sessions')}
                     </div>
                   </div>
                 )}
@@ -577,7 +565,7 @@ const handleButtonClick = async (button: Button) => {
                       {userStats.totalActiveDays}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      Giorni Attivi
+                      {t('activeDays')}
                     </div>
                   </div>
                 )}
@@ -585,144 +573,144 @@ const handleButtonClick = async (button: Button) => {
             )}
         </div>
 
-{/* Lista Corsi */}
-<div className="space-y-4">
-  <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-    Corsi Disponibili
-  </h2>
+        {/* Lista Corsi */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            {t('availableCourses')}
+          </h2>
 
-  {buttons.length === 0 ? (
-    <div className="text-center py-12">
-      <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-      <p className="text-gray-500 dark:text-gray-400">
-        Nessun corso disponibile.
-      </p>
-    </div>
-  ) : (
-    buttons.map((button) => {
-      const progress = courseProgressMap.get(button.language_code);
-      const percentage = progress?.completion_percentage || 0;
-      const isCompleted = percentage === 100;
-      
-      return (
-        <div
-          key={button.id}
-          onClick={() => handleButtonClick(button)}
-          className={`relative p-6 rounded-lg border-2 transition-all duration-200 ${
-            button.enabled
-              ? "border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md cursor-pointer"
-              : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed"
-          }`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-4">
-              <div
-                className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                  button.enabled
-                    ? isCompleted
-                      ? "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
-                      : "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-400"
-                }`}
-              >
-                {button.enabled ? (
-                  isCompleted ? (
-                    <CheckCircle className="w-6 h-6" />
-                  ) : (
-                    <PlayCircle className="w-6 h-6" />
-                  )
-                ) : (
-                  <Lock className="w-6 h-6" />
-                )}
-              </div>
-              <div>
-                <h3
-                  className={`text-lg font-semibold ${
+          {buttons.length === 0 ? (
+            <div className="text-center py-12">
+              <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">
+                {t('noCourses')}
+              </p>
+            </div>
+          ) : (
+            buttons.map((button) => {
+              const progress = courseProgressMap.get(button.language_code);
+              const percentage = progress?.completion_percentage || 0;
+              const isCompleted = percentage === 100;
+              
+              return (
+                <div
+                  key={button.id}
+                  onClick={() => handleButtonClick(button)}
+                  className={`relative p-6 rounded-lg border-2 transition-all duration-200 ${
                     button.enabled
-                      ? "text-gray-900 dark:text-white"
-                      : "text-gray-500 dark:text-gray-400"
+                      ? "border-blue-200 dark:border-blue-700 bg-white dark:bg-gray-800 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md cursor-pointer"
+                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed"
                   }`}
                 >
-                  {button.label}
-                </h3>
-                {button.description && (
-                  <p
-                    className={`text-sm ${
-                      button.enabled
-                        ? "text-gray-600 dark:text-gray-300"
-                        : "text-gray-400 dark:text-gray-500"
-                    }`}
-                  >
-                    {button.description}
-                  </p>
-                )}
-                {button.enabled && progress && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-x-3">
-                    <span>{progress.completed_exercises}/{progress.total_exercises} esercizi</span>
-                    <span>•</span>
-                    <span>{progress.completed_lessons}/{progress.total_lessons} lezioni</span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-4">
+                      <div
+                        className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                          button.enabled
+                            ? isCompleted
+                              ? "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
+                              : "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+                            : "bg-gray-100 dark:bg-gray-700 text-gray-400"
+                        }`}
+                      >
+                        {button.enabled ? (
+                          isCompleted ? (
+                            <CheckCircle className="w-6 h-6" />
+                          ) : (
+                            <PlayCircle className="w-6 h-6" />
+                          )
+                        ) : (
+                          <Lock className="w-6 h-6" />
+                        )}
+                      </div>
+                      <div>
+                        <h3
+                          className={`text-lg font-semibold ${
+                            button.enabled
+                              ? "text-gray-900 dark:text-white"
+                              : "text-gray-500 dark:text-gray-400"
+                          }`}
+                        >
+                          {button.label}
+                        </h3>
+                        {button.description && (
+                          <p
+                            className={`text-sm ${
+                              button.enabled
+                                ? "text-gray-600 dark:text-gray-300"
+                                : "text-gray-400 dark:text-gray-500"
+                            }`}
+                          >
+                            {button.description}
+                          </p>
+                        )}
+                        {button.enabled && progress && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-x-3">
+                            <span>{progress.completed_exercises}/{progress.total_exercises} {t('exercises')}</span>
+                            <span>•</span>
+                            <span>{progress.completed_lessons}/{progress.total_lessons} {t('lessons')}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight
+                      className={`w-5 h-5 ${
+                        button.enabled
+                          ? "text-gray-400 dark:text-gray-500"
+                          : "text-gray-300 dark:text-gray-600"
+                      }`}
+                    />
                   </div>
-                )}
-              </div>
-            </div>
-            <ChevronRight
-              className={`w-5 h-5 ${
-                button.enabled
-                  ? "text-gray-400 dark:text-gray-500"
-                  : "text-gray-300 dark:text-gray-600"
-              }`}
-            />
-          </div>
 
-          {/* Barra di progresso */}
-          {button.enabled && progress && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Progresso
-                </span>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {Math.round(percentage)}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                <div
-                  className={`h-2.5 rounded-full transition-all duration-500 ${
-                    isCompleted
-                      ? "bg-green-600 dark:bg-green-500"
-                      : percentage > 0
-                      ? "bg-blue-600 dark:bg-blue-500"
-                      : "bg-gray-300 dark:bg-gray-600"
-                  }`}
-                  style={{ width: `${percentage}%` }}
-                ></div>
-              </div>
-              {isCompleted && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                  ✅ Corso completato!
-                </p>
-              )}
-              {progress.last_activity && !isCompleted && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Ultimo accesso: {new Date(progress.last_activity).toLocaleDateString('it-IT')}
-                </p>
-              )}
-            </div>
-          )}
+                  {/* Barra di progresso */}
+                  {button.enabled && progress && (
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('progress')}
+                        </span>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {Math.round(percentage)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                        <div
+                          className={`h-2.5 rounded-full transition-all duration-500 ${
+                            isCompleted
+                              ? "bg-green-600 dark:bg-green-500"
+                              : percentage > 0
+                              ? "bg-blue-600 dark:bg-blue-500"
+                              : "bg-gray-300 dark:bg-gray-600"
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      {isCompleted && (
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
+                          ✅ {t('courseCompleted')}
+                        </p>
+                      )}
+                      {progress.last_activity && !isCompleted && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {t('lastAccess')}: {new Date(progress.last_activity).toLocaleDateString('it-IT')}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
-          {/* Badge stato per corsi non abilitati */}
-          {!button.enabled && (
-            <div className="absolute top-4 right-4">
-              <span className="px-2 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
-                Bloccato
-              </span>
-            </div>
+                  {/* Badge stato per corsi non abilitati */}
+                  {!button.enabled && (
+                    <div className="absolute top-4 right-4">
+                      <span className="px-2 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+                        {t('blocked')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
-      );
-    })
-  )}
-</div>
       </main>
     </div>
   );

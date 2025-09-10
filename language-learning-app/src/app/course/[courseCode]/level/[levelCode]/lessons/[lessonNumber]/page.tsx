@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react/no-unescaped-entities */
-
+// FILE: src/app/course/[courseCode]/level/[levelCode]/lessons/[lessonNumber]/page.tsx (VERSIONE AGGIORNATA CON TRADUZIONI)
+// Sostituisci il contenuto del file esistente con questo
 
 "use client";
 
@@ -9,6 +7,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ChevronLeft } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
+import LanguageSelector from "@/app/components/LanguageSelector";
 
 interface Exercise {
   id: string;
@@ -109,6 +109,8 @@ export default function LessonExercisesPage() {
   const router = useRouter();
   const courseCode = params?.courseCode as string;
   const lessonNumber = parseInt(params?.lessonNumber as string);
+  const { t } = useTranslation();
+  
   const [showResumeMessage, setShowResumeMessage] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -131,7 +133,6 @@ export default function LessonExercisesPage() {
   const [attemptCounts, setAttemptCounts] = useState<Map<string, number>>(new Map());
   const [showSolutions, setShowSolutions] = useState<Map<string, boolean>>(new Map());
 
-
   // Stati specifici per "Seleziona le coppie"
   const [selectedPairs, setSelectedPairs] = useState<SelectedPair[]>([]);
   const [pendingSelection, setPendingSelection] =
@@ -146,30 +147,28 @@ export default function LessonExercisesPage() {
     resetExerciseState();
   }, [currentLessonIndex, currentExerciseIndex]);
 
-const resetExerciseState = () => {
-  setSelectedOptions([]);
-  setSelectedPairs([]);
-  setPendingSelection(null);
-  setShowResult(false);
-  setIsCorrect(false);
-  // NON resettare attemptCounts e showSolutions qui
-};
+  const resetExerciseState = () => {
+    setSelectedOptions([]);
+    setSelectedPairs([]);
+    setPendingSelection(null);
+    setShowResult(false);
+    setIsCorrect(false);
+  };
 
-const getAttemptsForCurrentExercise = () => {
-  const exercise = getCurrentExercise();
-  if (!exercise) return 0;
-  return attemptCounts.get(exercise.id) || 0;
-};
+  const getAttemptsForCurrentExercise = () => {
+    const exercise = getCurrentExercise();
+    if (!exercise) return 0;
+    return attemptCounts.get(exercise.id) || 0;
+  };
 
-const shouldShowSolution = () => {
-  const exercise = getCurrentExercise();
-  if (!exercise) return false;
-  return showSolutions.get(exercise.id) || false;
-};
+  const shouldShowSolution = () => {
+    const exercise = getCurrentExercise();
+    if (!exercise) return false;
+    return showSolutions.get(exercise.id) || false;
+  };
 
   const initializePage = async () => {
     try {
-      // Verifica autenticazione
       const {
         data: { session },
         error: authError,
@@ -185,21 +184,17 @@ const shouldShowSolution = () => {
         email: session.user.email || "",
       });
 
-      // Verifica accesso al corso
       const hasAccess = await checkCourseAccess(session.user.id, courseCode);
       if (!hasAccess) {
-        setError("Non hai accesso a questo corso");
+        setError(t('noAccess'));
         return;
       }
 
-      // Carica informazioni corso
       await loadCourseInfo();
-
-      // Carica esercizi e progresso
       await loadExercisesAndProgress(session.user.id);
     } catch (err) {
       console.error("Errore inizializzazione:", err);
-      setError("Errore durante il caricamento del corso");
+      setError(t('courseLoadError'));
     } finally {
       setLoading(false);
     }
@@ -239,21 +234,19 @@ const shouldShowSolution = () => {
     }
   };
 
- const loadExercisesAndProgress = async (userId: string) => {
+  const loadExercisesAndProgress = async (userId: string) => {
     try {
-      // Carica solo gli esercizi della lezione specifica
-        const { data: exercises, error: exercisesError } = await supabase
+      const { data: exercises, error: exercisesError } = await supabase
         .from("anagrafica_esercizi")
         .select("*")
         .eq("language_code", courseCode.toUpperCase())
-        .eq("livello", levelCode) // AGGIUNGI QUESTO FILTRO
+        .eq("livello", levelCode)
         .eq("lezione", lessonNumber)
         .eq("active", true)
         .order("created_at", { ascending: true });
 
       if (exercisesError) throw exercisesError;
 
-      // Carica progresso
       const { data: progress, error: progressError } = await supabase
         .from("exercise_progress")
         .select("exercise_id, completed")
@@ -262,14 +255,12 @@ const shouldShowSolution = () => {
 
       if (progressError) throw progressError;
 
-      // Crea mappa del progresso
       const progressMap = new Map<string, boolean>();
       progress?.forEach((p) => {
         progressMap.set(p.exercise_id, p.completed);
       });
       setExerciseProgress(progressMap);
 
-      // Crea una singola "lezione" con gli esercizi filtrati
       const lesson: Lesson = {
         lesson_number: lessonNumber,
         exercises: exercises || [],
@@ -277,10 +268,9 @@ const shouldShowSolution = () => {
         total_exercises: (exercises || []).length,
       };
 
-      setLessons([lesson]); // Array con una sola lezione
+      setLessons([lesson]);
       setCurrentLessonIndex(0);
       
-      // Trova la posizione di partenza
       const startingExerciseIndex = findStartingExerciseIndex(exercises || [], progressMap);
       setCurrentExerciseIndex(startingExerciseIndex);
 
@@ -290,77 +280,13 @@ const shouldShowSolution = () => {
     }
   };
 
-    // 4. Aggiungi questa funzione helper
   const findStartingExerciseIndex = (exercises: any[], progressMap: Map<string, boolean>) => {
-    // Trova il primo esercizio non completato
     for (let i = 0; i < exercises.length; i++) {
       if (!progressMap.has(exercises[i].id)) {
         return i;
       }
     }
-    // Se tutti sono completati, vai all'ultimo
     return exercises.length > 0 ? exercises.length - 1 : 0;
-  };
-
-  const findStartingPosition = (lessons: Lesson[], exerciseProgress: Map<string, boolean>) => {
-  let lastCompletedLessonIndex = -1;
-  let lastCompletedExerciseIndex = -1;
-  let firstIncompleteLessonIndex = -1;
-  let firstIncompleteExerciseIndex = -1;
-
-  // Trova l'ultima posizione completata e la prima non completata
-  for (let lessonIndex = 0; lessonIndex < lessons.length; lessonIndex++) {
-    const lesson = lessons[lessonIndex];
-    let allExercisesCompleted = true;
-    
-    for (let exerciseIndex = 0; exerciseIndex < lesson.exercises.length; exerciseIndex++) {
-      const exercise = lesson.exercises[exerciseIndex];
-      const isCompleted = exerciseProgress.has(exercise.id);
-      
-      if (isCompleted) {
-        // Aggiorna l'ultima posizione completata
-        lastCompletedLessonIndex = lessonIndex;
-        lastCompletedExerciseIndex = exerciseIndex;
-      } else {
-        allExercisesCompleted = false;
-        // Se è la prima volta che troviamo un esercizio non completato
-        if (firstIncompleteLessonIndex === -1) {
-          firstIncompleteLessonIndex = lessonIndex;
-          firstIncompleteExerciseIndex = exerciseIndex;
-        }
-      }
-    }
-  }
-
-  // Logica per determinare dove iniziare:
-  // 1. Se c'è un esercizio non completato, vai al primo non completato
-  // 2. Altrimenti, se tutto è completato, vai all'ultimo esercizio
-  // 3. Se niente è completato, inizia dal primo esercizio
-  
-  if (firstIncompleteLessonIndex !== -1) {
-    // C'è almeno un esercizio non completato
-    return {
-      lessonIndex: firstIncompleteLessonIndex,
-      exerciseIndex: firstIncompleteExerciseIndex
-    };
-  } else if (lastCompletedLessonIndex !== -1) {
-    // Tutto completato, vai all'ultimo
-    return {
-      lessonIndex: lastCompletedLessonIndex,
-      exerciseIndex: lastCompletedExerciseIndex
-    };
-  } else {
-    // Niente completato, inizia dal primo
-    return {
-      lessonIndex: 0,
-      exerciseIndex: 0
-    };
-  }
-};
-const handleLessonComplete = () => {
-    // Mostra un messaggio di completamento e torna alle lezioni
-    alert("🎉 Hai completato questa lezione!");
-    router.push(`/course/${courseCode}/lessons`);
   };
 
   const getCurrentExercise = (): Exercise | null => {
@@ -403,16 +329,13 @@ const handleLessonComplete = () => {
     );
 
     if (existingIndex !== -1) {
-      // Rimuovi se già selezionato
       const newSelected = selectedOptions.filter((opt) => opt.value !== option);
-      // Ricalcola gli ordini
       const reorderedSelected = newSelected.map((opt, index) => ({
         ...opt,
         order: index + 1,
       }));
       setSelectedOptions(reorderedSelected);
     } else {
-      // Aggiungi alla fine
       const newOrder = selectedOptions.length + 1;
       setSelectedOptions([
         ...selectedOptions,
@@ -421,16 +344,13 @@ const handleLessonComplete = () => {
     }
   };
 
-  // Gestione specifica per "Seleziona le coppie"
   const handleWordClick = (word: string) => {
     if (showResult) return;
 
-    // Controlla se la parola è già selezionata in una coppia
     const existingPair = selectedPairs.find((pair) =>
       pair.words.includes(word)
     );
     if (existingPair) {
-      // Rimuovi la coppia esistente
       setSelectedPairs((prev) =>
         prev.filter((pair) => pair.pairId !== existingPair.pairId)
       );
@@ -438,14 +358,11 @@ const handleLessonComplete = () => {
       return;
     }
 
-    // Controlla se la parola è la selezione in sospeso
     if (pendingSelection && pendingSelection.word === word) {
-      // Cancella la selezione in sospeso
       setPendingSelection(null);
       return;
     }
 
-    // Se non c'è una selezione in sospeso, inizia una nuova coppia
     if (!pendingSelection) {
       const nextColorIndex = selectedPairs.length % PAIR_COLORS.length;
       setPendingSelection({
@@ -455,9 +372,8 @@ const handleLessonComplete = () => {
       return;
     }
 
-    // Completa la coppia
     const newPair: SelectedPair = {
-      pairId: Date.now(), // ID univoco per la coppia
+      pairId: Date.now(),
       words: [pendingSelection.word, word],
       colorIndex: pendingSelection.colorIndex,
     };
@@ -467,62 +383,56 @@ const handleLessonComplete = () => {
   };
 
   const getWordStyle = (word: string) => {
-    // Controlla se la parola è in una coppia completata
     const pair = selectedPairs.find((p) => p.words.includes(word));
     if (pair) {
       const color = PAIR_COLORS[pair.colorIndex];
       return `${color.bg} text-white ${color.border} shadow-md`;
     }
 
-    // Controlla se è la selezione in sospeso
     if (pendingSelection && pendingSelection.word === word) {
       const color = PAIR_COLORS[pendingSelection.colorIndex];
       return `${color.bg} text-white ${color.border} shadow-md animate-pulse`;
     }
 
-    // Stile di default
     return "bg-white text-gray-700 border-gray-300 hover:border-orange-400 hover:bg-orange-50";
   };
 
- const handleSubmitAnswer = async () => {
-  const exercise = getCurrentExercise();
-  if (!exercise || !user) return;
+  const handleSubmitAnswer = async () => {
+    const exercise = getCurrentExercise();
+    if (!exercise || !user) return;
 
-  // Incrementa il contatore dei tentativi per questo esercizio
-  const currentAttempts = attemptCounts.get(exercise.id) || 0;
-  const newAttempts = currentAttempts + 1;
-  setAttemptCounts(new Map(attemptCounts.set(exercise.id, newAttempts)));
+    const currentAttempts = attemptCounts.get(exercise.id) || 0;
+    const newAttempts = currentAttempts + 1;
+    setAttemptCounts(new Map(attemptCounts.set(exercise.id, newAttempts)));
 
-  let correct = false;
+    let correct = false;
 
-  switch (exercise.tipo_esercizio.toLowerCase()) {
-    case "traduci":
-      correct = validateTraduci(exercise);
-      break;
-    case "completa la frase":
-      correct = validateCompletaFrase(exercise);
-      break;
-    case "seleziona ciò che senti":
-      correct = validateSelezionaCheState(exercise);
-      break;
-    case "seleziona le coppie":
-      correct = validateSelezionaCoppie(exercise);
-      break;
-    default:
-      correct = false;
-  }
+    switch (exercise.tipo_esercizio.toLowerCase()) {
+      case "traduci":
+        correct = validateTraduci(exercise);
+        break;
+      case "completa la frase":
+        correct = validateCompletaFrase(exercise);
+        break;
+      case "seleziona ciò che senti":
+        correct = validateSelezionaCheState(exercise);
+        break;
+      case "seleziona le coppie":
+        correct = validateSelezionaCoppie(exercise);
+        break;
+      default:
+        correct = false;
+    }
 
-  setIsCorrect(correct);
-  setShowResult(true);
+    setIsCorrect(correct);
+    setShowResult(true);
 
-  // Se corretto, marca come completato
-  if (correct) {
-    await markExerciseCompleted(exercise.id);
-  } else if (newAttempts >= 3) {
-    // Se ha raggiunto i 3 tentativi, mostra la soluzione
-    setShowSolutions(new Map(showSolutions.set(exercise.id, true)));
-  }
-};
+    if (correct) {
+      await markExerciseCompleted(exercise.id);
+    } else if (newAttempts >= 3) {
+      setShowSolutions(new Map(showSolutions.set(exercise.id, true)));
+    }
+  };
 
   const handleRetryExercise = () => {
     resetExerciseState();
@@ -557,21 +467,15 @@ const handleLessonComplete = () => {
   const validateSelezionaCoppie = (exercise: Exercise): boolean => {
     try {
       const correctPairs = JSON.parse(exercise.soluzione);
-
-      // Converte le coppie selezionate in un formato confrontabile
       const userPairsSets = selectedPairs.map((pair) => new Set(pair.words));
-
-      // Converte le coppie corrette in set per il confronto
       const correctPairsSets = Object.entries(correctPairs).map(
         ([key, value]) => new Set([key, value as string])
       );
 
-      // Controlla se abbiamo lo stesso numero di coppie
       if (userPairsSets.length !== correctPairsSets.length) {
         return false;
       }
 
-      // Controlla se ogni coppia utente corrisponde a una coppia corretta
       return userPairsSets.every((userSet) =>
         correctPairsSets.some(
           (correctSet) =>
@@ -603,26 +507,15 @@ const handleLessonComplete = () => {
     }
   };
 
-  // Modifica goToNextExercise per gestire il completamento della lezione
-const goToNextExercise = () => {
-  const currentLesson = lessons[currentLessonIndex];
-  if (currentExerciseIndex < currentLesson.exercises.length - 1) {
-    setCurrentExerciseIndex(currentExerciseIndex + 1);
-  } else {
-    // La lezione è completata! Torna alle lezioni del livello
-    alert("🎉 Hai completato questa lezione!");
-    router.push(`/course/${courseCode}/level/${levelCode}/lessons`);
-  }
-};
-
-const completeLessonAndReturn = () => {
-  // Mostra messaggio di completamento (opzionale)
-  const confirmed = window.confirm("🎉 Hai completato questa lezione! Vuoi tornare all'elenco delle lezioni?");
-  
-  if (confirmed) {
-    router.push(`/course/${courseCode}/lessons`);
-  }
-};
+  const goToNextExercise = () => {
+    const currentLesson = lessons[currentLessonIndex];
+    if (currentExerciseIndex < currentLesson.exercises.length - 1) {
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+    } else {
+      alert(`🎉 ${t('lessonCompleted')}!`);
+      router.push(`/course/${courseCode}/level/${levelCode}/lessons`);
+    }
+  };
 
   const goToPreviousExercise = () => {
     if (currentExerciseIndex > 0) {
@@ -638,9 +531,7 @@ const completeLessonAndReturn = () => {
     const currentExercise = getCurrentExercise();
     if (!currentExercise) return false;
 
-    if (
-      currentExercise.tipo_esercizio.toLowerCase() === "seleziona le coppie"
-    ) {
+    if (currentExercise.tipo_esercizio.toLowerCase() === "seleziona le coppie") {
       return selectedPairs.length > 0;
     } else {
       return selectedOptions.length > 0;
@@ -661,7 +552,7 @@ const completeLessonAndReturn = () => {
         return renderSelezionaCoppieExercise(exercise, exerciseData);
       default:
         return (
-          <div className="text-red-500">Tipo di esercizio non supportato</div>
+          <div className="text-red-500">{t('exerciseTypeNotSupported')}</div>
         );
     }
   };
@@ -672,7 +563,7 @@ const completeLessonAndReturn = () => {
     return (
       <div>
         <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-          <p className="text-blue-800 font-medium">Frase da tradurre:</p>
+          <p className="text-blue-800 font-medium">{t('sentenceToTranslate')}:</p>
           <p className="text-blue-900 text-lg font-semibold mt-2">
             "{exercise.frase}"
           </p>
@@ -680,7 +571,7 @@ const completeLessonAndReturn = () => {
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            Trascina le parole per formare la traduzione:
+            {t('dragWordsToTranslate')}:
           </h3>
           <div className="flex flex-wrap gap-2 mb-4">
             {bancaParole.map((parola: string, index: number) => {
@@ -719,7 +610,7 @@ const completeLessonAndReturn = () => {
 
           {selectedOptions.length > 0 && (
             <div className="bg-gray-50 p-3 rounded border">
-              <p className="text-sm text-gray-600 mb-1">Traduzione:</p>
+              <p className="text-sm text-gray-600 mb-1">{t('translation')}:</p>
               <p className="font-medium">
                 {selectedOptions
                   .sort((a, b) => a.order - b.order)
@@ -739,7 +630,7 @@ const completeLessonAndReturn = () => {
     return (
       <div>
         <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
-          <p className="text-green-800 font-medium">Completa la frase:</p>
+          <p className="text-green-800 font-medium">{t('completeSentence')}:</p>
           <p className="text-green-900 text-lg font-semibold mt-2">
             "{exercise.frase}"
           </p>
@@ -747,7 +638,7 @@ const completeLessonAndReturn = () => {
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            Seleziona la parola corretta:
+            {t('selectCorrectWord')}:
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {opzioni.map((opzione: string, index: number) => {
@@ -759,7 +650,6 @@ const completeLessonAndReturn = () => {
                 <button
                   key={index}
                   onClick={() => {
-                    // Per questo tipo, solo una selezione
                     setSelectedOptions([{ value: opzione, order: 1 }]);
                   }}
                   disabled={showResult}
@@ -785,13 +675,12 @@ const completeLessonAndReturn = () => {
 
   const renderSelezionaCheStateExercise = (exercise: Exercise, data: any) => {
     const bancaParole = data.banca_parole || [];
-    const audioUrl = data.audio_url || "";
 
     return (
       <div>
         <div className="bg-purple-50 border-l-4 border-purple-400 p-4 mb-6">
           <p className="text-purple-800 font-medium">
-            Ascolta l'audio e forma la frase:
+            {t('listenAndFormSentence')}:
           </p>
           <div className="flex items-center gap-3 mt-3">
             <button
@@ -800,13 +689,13 @@ const completeLessonAndReturn = () => {
             >
               {isPlaying ? "⏸️" : "▶️"}
             </button>
-            <span className="text-purple-700">Clicca per ascoltare</span>
+            <span className="text-purple-700">{t('clickToListen')}</span>
           </div>
         </div>
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            Seleziona le parole nell'ordine corretto:
+            {t('selectWordsInOrder')}:
           </h3>
           <div className="flex flex-wrap gap-2 mb-4">
             {bancaParole.map((parola: string, index: number) => {
@@ -845,7 +734,7 @@ const completeLessonAndReturn = () => {
 
           {selectedOptions.length > 0 && (
             <div className="bg-gray-50 p-3 rounded border">
-              <p className="text-sm text-gray-600 mb-1">Frase formata:</p>
+              <p className="text-sm text-gray-600 mb-1">{t('formedSentence')}:</p>
               <p className="font-medium">
                 {selectedOptions
                   .sort((a, b) => a.order - b.order)
@@ -866,20 +755,18 @@ const completeLessonAndReturn = () => {
       <div>
         <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">
           <p className="text-orange-800 font-medium">
-            Abbina ogni parola inglese alla sua traduzione italiana:
+            {t('matchWordsTranslation')}:
           </p>
           <p className="text-orange-700 text-sm mt-2">
-            Clicca due parole per formare una coppia. Ogni coppia avrà un colore
-            diverso.
+            {t('clickTwoWords')}
           </p>
         </div>
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            Seleziona le coppie - ogni coppia avrà un colore diverso:
+            {t('selectPairsWithColors')}:
           </h3>
 
-          {/* Griglia delle parole */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
             {coppie.map((parola: string, index: number) => {
               return (
@@ -901,10 +788,9 @@ const completeLessonAndReturn = () => {
             })}
           </div>
 
-          {/* Visualizzazione delle coppie selezionate */}
           {selectedPairs.length > 0 && (
             <div className="bg-gray-50 p-4 rounded border">
-              <p className="text-sm text-gray-600 mb-3">Coppie selezionate:</p>
+              <p className="text-sm text-gray-600 mb-3">{t('selectedPairs')}:</p>
               <div className="space-y-2">
                 {selectedPairs.map((pair) => {
                   const color = PAIR_COLORS[pair.colorIndex];
@@ -924,12 +810,11 @@ const completeLessonAndReturn = () => {
             </div>
           )}
 
-          {/* Indicazione selezione in sospeso */}
           {pendingSelection && (
             <div className="bg-yellow-50 border border-yellow-200 p-3 rounded mt-3">
               <p className="text-yellow-800 text-sm">
-                Hai selezionato "<strong>{pendingSelection.word}</strong>".
-                Clicca su un'altra parola per completare la coppia.
+                {t('selectedWord')} "<strong>{pendingSelection.word}</strong>".
+                {t('clickAnotherWord')}
               </p>
             </div>
           )}
@@ -938,75 +823,72 @@ const completeLessonAndReturn = () => {
     );
   };
 
-const renderActionButtons = () => {
-  const exerciseCompleted = isCurrentExerciseCompleted();
-  const attempts = getAttemptsForCurrentExercise();
-  const maxAttemptsReached = attempts >= 3;
-  const showSolution = shouldShowSolution();
+  const renderActionButtons = () => {
+    const exerciseCompleted = isCurrentExerciseCompleted();
+    const attempts = getAttemptsForCurrentExercise();
+    const maxAttemptsReached = attempts >= 3;
+    const currentLesson = lessons[currentLessonIndex];
 
-  return (
-    <div className="flex justify-between items-center">
-      <button
-        onClick={goToPreviousExercise}
-        disabled={currentLessonIndex === 0 && currentExerciseIndex === 0}
-        className="text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        ← Precedente
-      </button>
-
-      {!showResult ? (
-        // Prima della verifica
+    return (
+      <div className="flex justify-between items-center">
         <button
-          onClick={handleSubmitAnswer}
-          disabled={!hasAnswerSelected() || maxAttemptsReached}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md"
+          onClick={goToPreviousExercise}
+          disabled={currentLessonIndex === 0 && currentExerciseIndex === 0}
+          className="text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Verifica
+          ← {t('previous')}
         </button>
-      ) : (
-        // Dopo la verifica
-        <div className="flex gap-3">
-          {!isCorrect && !maxAttemptsReached && (
-            <button
-              onClick={handleRetryExercise}
-              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
-            >
-              🔄 Riprova ({3 - attempts} tentativi rimasti)
-            </button>
-          )}
 
-        {(isCorrect || exerciseCompleted || maxAttemptsReached) && (
+        {!showResult ? (
+          <button
+            onClick={handleSubmitAnswer}
+            disabled={!hasAnswerSelected() || maxAttemptsReached}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md"
+          >
+            {t('verify')}
+          </button>
+        ) : (
+          <div className="flex gap-3">
+            {!isCorrect && !maxAttemptsReached && (
+              <button
+                onClick={handleRetryExercise}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
+              >
+                🔄 {t('retry')} ({3 - attempts} {t('attemptsLeft')})
+              </button>
+            )}
+
+            {(isCorrect || exerciseCompleted || maxAttemptsReached) && (
+              <button
+                onClick={goToNextExercise}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+              >
+                {currentExerciseIndex === currentLesson.exercises.length - 1 
+                  ? `${t('completeLesson')} →` 
+                  : t('next')}
+              </button>
+            )}
+          </div>
+        )}
+
+        {exerciseCompleted && !showResult && canMoveToNext() && (
           <button
             onClick={goToNextExercise}
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           >
-            {currentExerciseIndex === currentLesson.exercises.length - 1 
-              ? "Completa Lezione →" 
-              : "Avanti"}
+            {t('next')}
           </button>
-          )}
-        </div>
-      )}
-
-      {/* Pulsante sempre disponibile per esercizi già completati */}
-      {exerciseCompleted && !showResult && canMoveToNext() && (
-        <button
-          onClick={goToNextExercise}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-        >
-          Avanti
-        </button>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">Caricamento corso...</p>
+          <p className="text-xl text-gray-600">{t('loadingCourse')}</p>
         </div>
       </div>
     );
@@ -1016,14 +898,14 @@ const renderActionButtons = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Errore</h2>
+          <div className="text-6xl mb-4">⚠</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('error')}</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => router.push("/")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
           >
-            Torna alla Home
+            {t('backToHome')}
           </button>
         </div>
       </div>
@@ -1031,65 +913,65 @@ const renderActionButtons = () => {
   }
 
   const currentExercise = getCurrentExercise();
-  const progress = getCurrentProgress();
   const currentLesson = lessons[currentLessonIndex];
 
-if (!currentExercise) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="text-6xl mb-4">🎉</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Lezione Completata!
-        </h2>
-        <p className="text-gray-600 mb-4">
-          Hai completato tutti gli esercizi della lezione {lessonNumber}
-        </p>
-<button
-  onClick={() => router.push(`/course/${courseCode}/level/${levelCode}/lessons`)}
-  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
->
-  Torna alle Lezioni
-</button>
+  if (!currentExercise) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {t('lessonCompleted')}!
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {t('completedAllExercises')} {lessonNumber}
+          </p>
+          <button
+            onClick={() => router.push(`/course/${courseCode}/level/${levelCode}/lessons`)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
+          >
+            {t('backToLessons')}
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-{/* Header */}
-  <div className="bg-white shadow-sm border-b">
-    <div className="max-w-4xl mx-auto px-4 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-            <button
-            onClick={() => router.push(`/course/${courseCode}/level/${levelCode}/lessons`)}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
-            >
-            <ChevronLeft className="w-5 h-5" />
-            <span className="text-sm">Lezioni</span>
-            </button>
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push(`/course/${courseCode}/level/${levelCode}/lessons`)}
+                className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                <span className="text-sm">{t('lessons')}</span>
+              </button>
 
-          <div>
-<h1 className="text-xl font-bold text-gray-900">{courseName}</h1>
-<p className="text-sm text-gray-600">
-  Livello {levelCode} - Lezione {lessonNumber} - Esercizio {currentExerciseIndex + 1} di {currentLesson?.exercises.length || 0}
-</p>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">{courseName}</h1>
+                <p className="text-sm text-gray-600">
+                  {t('level')} {levelCode} - {t('lesson')} {lessonNumber} - {t('exercise')} {currentExerciseIndex + 1} {t('of')} {currentLesson?.exercises.length || 0}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <LanguageSelector />
+              <button
+                onClick={() => router.push("/")}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md"
+              >
+                {t('exit')}
+              </button>
+            </div>
           </div>
         </div>
-        <button
-          onClick={() => router.push("/")}
-          className="bg-red-500 hover:bg-gray-200 text-white px-4 py-2 rounded-md"
-        >
-          Esci
-        </button>
       </div>
-    </div>
-  </div>
 
-
-      {/* Messaggio di ripresa */}
       {showResumeMessage && (
         <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 max-w-4xl mx-auto mt-4">
           <div className="flex items-center">
@@ -1098,7 +980,7 @@ if (!currentExercise) {
             </div>
             <div className="ml-3">
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                Ripresa dal punto in cui avevi lasciato: <strong>Lezione {currentLessonIndex + 1}, Esercizio {currentExerciseIndex + 1}</strong>
+                {t('resumedFromWhere')}: <strong>{t('lesson')} {currentLessonIndex + 1}, {t('exercise')} {currentExerciseIndex + 1}</strong>
               </p>
             </div>
             <button
@@ -1128,55 +1010,55 @@ if (!currentExercise) {
           {renderExercise(currentExercise)}
 
           {/* Result Display */}
-{showResult && (
-  <div className="mt-6 p-4 rounded-lg border-2 bg-gray-50 border-gray-300">
-    <div className="flex items-center gap-3">
-      <div className={`text-2xl ${isCorrect ? "text-green-600" : "text-red-600"}`}>
-        {isCorrect ? "✅" : "❌"}
-      </div>
-      <div>
-        <p className={`font-medium ${isCorrect ? "text-green-800" : "text-red-800"}`}>
-          {isCorrect ? "Corretto!" : "Non corretto"}
-        </p>
-        {!isCorrect && (
-          <>
-            <p className="text-red-700 text-sm mt-1">
-              {getAttemptsForCurrentExercise() < 3 
-                ? `Tentativo ${getAttemptsForCurrentExercise()} di 3`
-                : "Hai esaurito i tentativi disponibili"}
-            </p>
-            {shouldShowSolution() && (
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-blue-800 font-medium mb-1">💡 Soluzione:</p>
-                <p className="text-blue-900">{currentExercise.soluzione}</p>
+          {showResult && (
+            <div className="mt-6 p-4 rounded-lg border-2 bg-gray-50 border-gray-300">
+              <div className="flex items-center gap-3">
+                <div className={`text-2xl ${isCorrect ? "text-green-600" : "text-red-600"}`}>
+                  {isCorrect ? "✅" : "❌"}
+                </div>
+                <div>
+                  <p className={`font-medium ${isCorrect ? "text-green-800" : "text-red-800"}`}>
+                    {isCorrect ? t('correct') : t('incorrect')}
+                  </p>
+                  {!isCorrect && (
+                    <>
+                      <p className="text-red-700 text-sm mt-1">
+                        {getAttemptsForCurrentExercise() < 3 
+                          ? `${t('attempt')} ${getAttemptsForCurrentExercise()} ${t('of')} 3`
+                          : t('attemptsExhausted')}
+                      </p>
+                      {shouldShowSolution() && (
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                          <p className="text-blue-800 font-medium mb-1">💡 {t('solution')}:</p>
+                          <p className="text-blue-900">{currentExercise.soluzione}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  </div>
-)}
+            </div>
+          )}
 
-{!showResult && getAttemptsForCurrentExercise() > 0 && getAttemptsForCurrentExercise() < 3 && !isCurrentExerciseCompleted() && (
-  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-    <p className="text-yellow-800 text-sm font-medium">
-      ⚠️ Hai già fatto {getAttemptsForCurrentExercise()} tentativ{getAttemptsForCurrentExercise() === 1 ? 'o' : 'i'}. 
-      Te ne riman{3 - getAttemptsForCurrentExercise() === 1 ? 'e' : 'gono'} {3 - getAttemptsForCurrentExercise()}.
-    </p>
-  </div>
-)}
+          {!showResult && getAttemptsForCurrentExercise() > 0 && getAttemptsForCurrentExercise() < 3 && !isCurrentExerciseCompleted() && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-yellow-800 text-sm font-medium">
+                ⚠️ {t('alreadyAttempted')} {getAttemptsForCurrentExercise()} {t('attempts')}. 
+                {t('remaining')} {3 - getAttemptsForCurrentExercise()}.
+              </p>
+            </div>
+          )}
 
-{getAttemptsForCurrentExercise() >= 3 && !isCurrentExerciseCompleted() && !showResult && (
-  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-    <p className="text-red-800 text-sm font-medium">
-      ❌ Hai esaurito i 3 tentativi disponibili per questo esercizio.
-    </p>
-    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
-      <p className="text-blue-800 text-sm">💡 Soluzione: {getCurrentExercise()?.soluzione}</p>
-    </div>
-  </div>
-)}
+          {getAttemptsForCurrentExercise() >= 3 && !isCurrentExerciseCompleted() && !showResult && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-800 text-sm font-medium">
+                ❌ {t('exhaustedAttempts')}
+              </p>
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-blue-800 text-sm">💡 {t('solution')}: {getCurrentExercise()?.soluzione}</p>
+              </div>
+            </div>
+          )}
 
           {/* Action Buttons */}
           {renderActionButtons()}
@@ -1185,7 +1067,7 @@ if (!currentExercise) {
           {isCurrentExerciseCompleted() && !showResult && (
             <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
               <p className="text-green-800 text-sm font-medium">
-                ✅ Esercizio già completato in precedenza
+                ✅ {t('exerciseAlreadyCompleted')}
               </p>
             </div>
           )}
@@ -1194,12 +1076,12 @@ if (!currentExercise) {
         {/* Lesson Progress */}
         <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
           <h3 className="font-medium text-gray-900 mb-3">
-            Progresso Lezione {currentLesson.lesson_number}
+            {t('progressLesson')} {currentLesson.lesson_number}
           </h3>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-600">
               {currentLesson.completed_exercises}/
-              {currentLesson.total_exercises} esercizi completati
+              {currentLesson.total_exercises} {t('exercisesCompleted')}
             </span>
             <span className="text-sm text-gray-600">
               {Math.round(
@@ -1227,24 +1109,20 @@ if (!currentExercise) {
         {/* Navigation Help */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h4 className="font-medium text-blue-900 mb-2">
-            💡 Suggerimenti per la Navigazione
+            💡 {t('navigationTips')}
           </h4>
           <div className="text-sm text-blue-800 space-y-1">
             <p>
-              • <strong>Verifica:</strong> Controlla la tua risposta prima di
-              procedere
+              • <strong>{t('verify')}:</strong> {t('checkAnswerTip')}
             </p>
             <p>
-              • <strong>Riprova:</strong> Se sbagli, puoi riprovare l'esercizio
-              immediatamente
+              • <strong>{t('retry')}:</strong> {t('retryTip')}
             </p>
             <p>
-              • <strong>Avanti:</strong> Passa al prossimo esercizio quando hai
-              completato quello corrente
+              • <strong>{t('next')}:</strong> {t('nextTip')}
             </p>
             <p>
-              • <strong>Esercizi completati:</strong> Puoi saltare direttamente
-              agli esercizi successivi
+              • <strong>{t('completedExercises')}:</strong> {t('skipTip')}
             </p>
           </div>
         </div>

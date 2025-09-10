@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import LayoutWrapper from "./components/LayoutWrapper";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "Learning Platform",
   description: "Piattaforma di apprendimento con corsi personalizzati",
 };
