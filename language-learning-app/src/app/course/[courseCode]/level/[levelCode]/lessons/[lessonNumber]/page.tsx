@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { ChevronLeft } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import AudioPlayer from "@/app/components/AudioPlayer";
 import LanguageSelector from "@/app/components/LanguageSelector";
 
 interface Exercise {
@@ -683,12 +684,7 @@ export default function LessonExercisesPage() {
             {t('listenAndFormSentence')}:
           </p>
           <div className="flex items-center gap-3 mt-3">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-full"
-            >
-              {isPlaying ? "⏸️" : "▶️"}
-            </button>
+            <AudioPlayer url={exercise.opzionali.audio as string}/>
             <span className="text-purple-700">{t('clickToListen')}</span>
           </div>
         </div>
