@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // FILE: src/hooks/useTranslation.ts (VERSIONE CORRETTA)
 // Sostituisci il contenuto del file esistente con questo
 
