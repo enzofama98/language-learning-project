@@ -505,6 +505,18 @@ const handleLessonComplete = () => {
     case "seleziona le coppie":
       correct = validateSelezionaCoppie(exercise);
       break;
+    case "traduire":
+      correct = validateTraduci(exercise);
+      break;
+    case "complète la phrase":
+      correct = validateCompletaFrase(exercise);
+      break;
+    case "sélectionne ce que tu entends":
+      correct = validateSelezionaCheState(exercise);
+      break;
+    case "sélectionne les paires":
+      correct = validateSelezionaCoppie(exercise);
+      break;
     default:
       correct = false;
   }
@@ -656,6 +668,14 @@ const completeLessonAndReturn = () => {
       case "seleziona ciò che senti":
         return renderSelezionaCheStateExercise(exercise, exerciseData);
       case "seleziona le coppie":
+        return renderSelezionaCoppieExercise(exercise, exerciseData);
+      case "traduire":
+        return renderTraduciExercise(exercise, exerciseData);
+      case "complète la phrase":
+        return renderCompletaFraseExercise(exercise, exerciseData);
+      case "sélectionne ce que tu entends":
+        return renderSelezionaCheStateExercise(exercise, exerciseData);
+      case "sélectionne les paires":
         return renderSelezionaCoppieExercise(exercise, exerciseData);
       default:
         return (
