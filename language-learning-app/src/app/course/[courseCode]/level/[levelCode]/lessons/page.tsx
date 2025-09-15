@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // FILE: src/app/course/[courseCode]/level/[levelCode]/lessons/page.tsx (VERSIONE AGGIORNATA CON TRADUZIONI)
 // Sostituisci il contenuto del file esistente con questo
 

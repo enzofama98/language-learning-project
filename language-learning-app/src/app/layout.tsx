@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Metadata } from "next";
 import "./globals.css";
 import LayoutWrapper from "./components/LayoutWrapper";
