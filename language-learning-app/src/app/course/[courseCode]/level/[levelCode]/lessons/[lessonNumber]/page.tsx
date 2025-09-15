@@ -848,7 +848,8 @@ export default function LessonExercisesPage() {
           {pendingSelection && (
             <div className="bg-yellow-50 border border-yellow-200 p-3 rounded mt-3">
               <p className="text-yellow-800 text-sm">
-                {t("selectedWord")} "<strong>{pendingSelection.word}</strong>
+                {t("selectedWord")} &quot;
+                <strong>{pendingSelection.word}</strong>
                 &quot;.
                 {t("clickAnotherWord")}
               </p>
