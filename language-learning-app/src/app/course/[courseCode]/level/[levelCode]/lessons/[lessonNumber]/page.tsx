@@ -113,7 +113,7 @@ export default function LessonExercisesPage() {
   const courseCode = params?.courseCode as string;
   const lessonNumber = parseInt(params?.lessonNumber as string);
   const { t } = useTranslation();
-  
+
   const [showResumeMessage, setShowResumeMessage] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -133,8 +133,12 @@ export default function LessonExercisesPage() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   // stati aggiunti
-  const [attemptCounts, setAttemptCounts] = useState<Map<string, number>>(new Map());
-  const [showSolutions, setShowSolutions] = useState<Map<string, boolean>>(new Map());
+  const [attemptCounts, setAttemptCounts] = useState<Map<string, number>>(
+    new Map()
+  );
+  const [showSolutions, setShowSolutions] = useState<Map<string, boolean>>(
+    new Map()
+  );
 
   // Stati specifici per "Seleziona le coppie"
   const [selectedPairs, setSelectedPairs] = useState<SelectedPair[]>([]);
@@ -189,7 +193,7 @@ export default function LessonExercisesPage() {
 
       const hasAccess = await checkCourseAccess(session.user.id, courseCode);
       if (!hasAccess) {
-        setError(t('noAccess'));
+        setError(t("noAccess"));
         return;
       }
 
@@ -197,7 +201,7 @@ export default function LessonExercisesPage() {
       await loadExercisesAndProgress(session.user.id);
     } catch (err) {
       console.error("Errore inizializzazione:", err);
-      setError(t('courseLoadError'));
+      setError(t("courseLoadError"));
     } finally {
       setLoading(false);
     }
@@ -267,23 +271,30 @@ export default function LessonExercisesPage() {
       const lesson: Lesson = {
         lesson_number: lessonNumber,
         exercises: exercises || [],
-        completed_exercises: (exercises || []).filter((ex) => progressMap.has(ex.id)).length,
+        completed_exercises: (exercises || []).filter((ex) =>
+          progressMap.has(ex.id)
+        ).length,
         total_exercises: (exercises || []).length,
       };
 
       setLessons([lesson]);
       setCurrentLessonIndex(0);
-      
-      const startingExerciseIndex = findStartingExerciseIndex(exercises || [], progressMap);
-      setCurrentExerciseIndex(startingExerciseIndex);
 
+      const startingExerciseIndex = findStartingExerciseIndex(
+        exercises || [],
+        progressMap
+      );
+      setCurrentExerciseIndex(startingExerciseIndex);
     } catch (err) {
       console.error("Errore caricamento esercizi:", err);
       throw err;
     }
   };
 
-  const findStartingExerciseIndex = (exercises: any[], progressMap: Map<string, boolean>) => {
+  const findStartingExerciseIndex = (
+    exercises: any[],
+    progressMap: Map<string, boolean>
+  ) => {
     for (let i = 0; i < exercises.length; i++) {
       if (!progressMap.has(exercises[i].id)) {
         return i;
@@ -527,7 +538,7 @@ export default function LessonExercisesPage() {
     if (currentExerciseIndex < currentLesson.exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
     } else {
-      alert(`🎉 ${t('lessonCompleted')}!`);
+      alert(`🎉 ${t("lessonCompleted")}!`);
       router.push(`/course/${courseCode}/level/${levelCode}/lessons`);
     }
   };
@@ -546,7 +557,9 @@ export default function LessonExercisesPage() {
     const currentExercise = getCurrentExercise();
     if (!currentExercise) return false;
 
-    if (currentExercise.tipo_esercizio.toLowerCase() === "seleziona le coppie") {
+    if (
+      currentExercise.tipo_esercizio.toLowerCase() === "seleziona le coppie"
+    ) {
       return selectedPairs.length > 0;
     } else {
       return selectedOptions.length > 0;
@@ -575,7 +588,7 @@ export default function LessonExercisesPage() {
         return renderSelezionaCoppieExercise(exercise, exerciseData);
       default:
         return (
-          <div className="text-red-500">{t('exerciseTypeNotSupported')}</div>
+          <div className="text-red-500">{t("exerciseTypeNotSupported")}</div>
         );
     }
   };
@@ -586,15 +599,17 @@ export default function LessonExercisesPage() {
     return (
       <div>
         <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-          <p className="text-blue-800 font-medium">{t('sentenceToTranslate')}:</p>
+          <p className="text-blue-800 font-medium">
+            {t("sentenceToTranslate")}:
+          </p>
           <p className="text-blue-900 text-lg font-semibold mt-2">
-            "{exercise.frase}"
+            &quot;{exercise.frase}&quot;
           </p>
         </div>
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            {t('dragWordsToTranslate')}:
+            {t("dragWordsToTranslate")}:
           </h3>
           <div className="flex flex-wrap gap-2 mb-4">
             {bancaParole.map((parola: string, index: number) => {
@@ -633,7 +648,7 @@ export default function LessonExercisesPage() {
 
           {selectedOptions.length > 0 && (
             <div className="bg-gray-50 p-3 rounded border">
-              <p className="text-sm text-gray-600 mb-1">{t('translation')}:</p>
+              <p className="text-sm text-gray-600 mb-1">{t("translation")}:</p>
               <p className="font-medium">
                 {selectedOptions
                   .sort((a, b) => a.order - b.order)
@@ -653,7 +668,7 @@ export default function LessonExercisesPage() {
     return (
       <div>
         <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
-          <p className="text-green-800 font-medium">{t('completeSentence')}:</p>
+          <p className="text-green-800 font-medium">{t("completeSentence")}:</p>
           <p className="text-green-900 text-lg font-semibold mt-2">
             "{exercise.frase}"
           </p>
@@ -661,7 +676,7 @@ export default function LessonExercisesPage() {
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            {t('selectCorrectWord')}:
+            {t("selectCorrectWord")}:
           </h3>
           <div className="grid grid-cols-2 gap-3">
             {opzioni.map((opzione: string, index: number) => {
@@ -703,17 +718,17 @@ export default function LessonExercisesPage() {
       <div>
         <div className="bg-purple-50 border-l-4 border-purple-400 p-4 mb-6">
           <p className="text-purple-800 font-medium">
-            {t('listenAndFormSentence')}:
+            {t("listenAndFormSentence")}:
           </p>
           <div className="flex items-center gap-3 mt-3">
-            <AudioPlayer url={exercise.opzionali.audio as string}/>
-            <span className="text-purple-700">{t('clickToListen')}</span>
+            <AudioPlayer url={exercise.opzionali.audio as string} />
+            <span className="text-purple-700">{t("clickToListen")}</span>
           </div>
         </div>
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            {t('selectWordsInOrder')}:
+            {t("selectWordsInOrder")}:
           </h3>
           <div className="flex flex-wrap gap-2 mb-4">
             {bancaParole.map((parola: string, index: number) => {
@@ -752,7 +767,9 @@ export default function LessonExercisesPage() {
 
           {selectedOptions.length > 0 && (
             <div className="bg-gray-50 p-3 rounded border">
-              <p className="text-sm text-gray-600 mb-1">{t('formedSentence')}:</p>
+              <p className="text-sm text-gray-600 mb-1">
+                {t("formedSentence")}:
+              </p>
               <p className="font-medium">
                 {selectedOptions
                   .sort((a, b) => a.order - b.order)
@@ -773,16 +790,14 @@ export default function LessonExercisesPage() {
       <div>
         <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">
           <p className="text-orange-800 font-medium">
-            {t('matchWordsTranslation')}:
+            {t("matchWordsTranslation")}:
           </p>
-          <p className="text-orange-700 text-sm mt-2">
-            {t('clickTwoWords')}
-          </p>
+          <p className="text-orange-700 text-sm mt-2">{t("clickTwoWords")}</p>
         </div>
 
         <div className="mb-6">
           <h3 className="font-medium text-gray-700 mb-3">
-            {t('selectPairsWithColors')}:
+            {t("selectPairsWithColors")}:
           </h3>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
@@ -808,7 +823,9 @@ export default function LessonExercisesPage() {
 
           {selectedPairs.length > 0 && (
             <div className="bg-gray-50 p-4 rounded border">
-              <p className="text-sm text-gray-600 mb-3">{t('selectedPairs')}:</p>
+              <p className="text-sm text-gray-600 mb-3">
+                {t("selectedPairs")}:
+              </p>
               <div className="space-y-2">
                 {selectedPairs.map((pair) => {
                   const color = PAIR_COLORS[pair.colorIndex];
@@ -831,8 +848,8 @@ export default function LessonExercisesPage() {
           {pendingSelection && (
             <div className="bg-yellow-50 border border-yellow-200 p-3 rounded mt-3">
               <p className="text-yellow-800 text-sm">
-                {t('selectedWord')} "<strong>{pendingSelection.word}</strong>".
-                {t('clickAnotherWord')}
+                {t("selectedWord")} "<strong>{pendingSelection.word}</strong>".
+                {t("clickAnotherWord")}
               </p>
             </div>
           )}
@@ -854,7 +871,7 @@ export default function LessonExercisesPage() {
           disabled={currentLessonIndex === 0 && currentExerciseIndex === 0}
           className="text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          ← {t('previous')}
+          ← {t("previous")}
         </button>
 
         {!showResult ? (
@@ -863,7 +880,7 @@ export default function LessonExercisesPage() {
             disabled={!hasAnswerSelected() || maxAttemptsReached}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md"
           >
-            {t('verify')}
+            {t("verify")}
           </button>
         ) : (
           <div className="flex gap-3">
@@ -872,7 +889,7 @@ export default function LessonExercisesPage() {
                 onClick={handleRetryExercise}
                 className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
               >
-                🔄 {t('retry')} ({3 - attempts} {t('attemptsLeft')})
+                🔄 {t("retry")} ({3 - attempts} {t("attemptsLeft")})
               </button>
             )}
 
@@ -881,9 +898,9 @@ export default function LessonExercisesPage() {
                 onClick={goToNextExercise}
                 className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
               >
-                {currentExerciseIndex === currentLesson.exercises.length - 1 
-                  ? `${t('completeLesson')} →` 
-                  : t('next')}
+                {currentExerciseIndex === currentLesson.exercises.length - 1
+                  ? `${t("completeLesson")} →`
+                  : t("next")}
               </button>
             )}
           </div>
@@ -894,7 +911,7 @@ export default function LessonExercisesPage() {
             onClick={goToNextExercise}
             className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
           >
-            {t('next')}
+            {t("next")}
           </button>
         )}
       </div>
@@ -906,7 +923,7 @@ export default function LessonExercisesPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">{t('loadingCourse')}</p>
+          <p className="text-xl text-gray-600">{t("loadingCourse")}</p>
         </div>
       </div>
     );
@@ -917,13 +934,15 @@ export default function LessonExercisesPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-6xl mb-4">⚠</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('error')}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {t("error")}
+          </h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => router.push("/")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
           >
-            {t('backToHome')}
+            {t("backToHome")}
           </button>
         </div>
       </div>
@@ -939,16 +958,18 @@ export default function LessonExercisesPage() {
         <div className="text-center">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {t('lessonCompleted')}!
+            {t("lessonCompleted")}!
           </h2>
           <p className="text-gray-600 mb-4">
-            {t('completedAllExercises')} {lessonNumber}
+            {t("completedAllExercises")} {lessonNumber}
           </p>
           <button
-            onClick={() => router.push(`/course/${courseCode}/level/${levelCode}/lessons`)}
+            onClick={() =>
+              router.push(`/course/${courseCode}/level/${levelCode}/lessons`)
+            }
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
           >
-            {t('backToLessons')}
+            {t("backToLessons")}
           </button>
         </div>
       </div>
@@ -963,17 +984,25 @@ export default function LessonExercisesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push(`/course/${courseCode}/level/${levelCode}/lessons`)}
+                onClick={() =>
+                  router.push(
+                    `/course/${courseCode}/level/${levelCode}/lessons`
+                  )
+                }
                 className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
               >
                 <ChevronLeft className="w-5 h-5" />
-                <span className="text-sm">{t('lessons')}</span>
+                <span className="text-sm">{t("lessons")}</span>
               </button>
 
               <div>
-                <h1 className="text-xl font-bold text-gray-900">{courseName}</h1>
+                <h1 className="text-xl font-bold text-gray-900">
+                  {courseName}
+                </h1>
                 <p className="text-sm text-gray-600">
-                  {t('level')} {levelCode} - {t('lesson')} {lessonNumber} - {t('exercise')} {currentExerciseIndex + 1} {t('of')} {currentLesson?.exercises.length || 0}
+                  {t("level")} {levelCode} - {t("lesson")} {lessonNumber} -{" "}
+                  {t("exercise")} {currentExerciseIndex + 1} {t("of")}{" "}
+                  {currentLesson?.exercises.length || 0}
                 </p>
               </div>
             </div>
@@ -983,7 +1012,7 @@ export default function LessonExercisesPage() {
                 onClick={() => router.push("/")}
                 className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md"
               >
-                {t('exit')}
+                {t("exit")}
               </button>
             </div>
           </div>
@@ -998,7 +1027,11 @@ export default function LessonExercisesPage() {
             </div>
             <div className="ml-3">
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                {t('resumedFromWhere')}: <strong>{t('lesson')} {currentLessonIndex + 1}, {t('exercise')} {currentExerciseIndex + 1}</strong>
+                {t("resumedFromWhere")}:{" "}
+                <strong>
+                  {t("lesson")} {currentLessonIndex + 1}, {t("exercise")}{" "}
+                  {currentExerciseIndex + 1}
+                </strong>
               </p>
             </div>
             <button
@@ -1031,24 +1064,38 @@ export default function LessonExercisesPage() {
           {showResult && (
             <div className="mt-6 p-4 rounded-lg border-2 bg-gray-50 border-gray-300">
               <div className="flex items-center gap-3">
-                <div className={`text-2xl ${isCorrect ? "text-green-600" : "text-red-600"}`}>
+                <div
+                  className={`text-2xl ${
+                    isCorrect ? "text-green-600" : "text-red-600"
+                  }`}
+                >
                   {isCorrect ? "✅" : "❌"}
                 </div>
                 <div>
-                  <p className={`font-medium ${isCorrect ? "text-green-800" : "text-red-800"}`}>
-                    {isCorrect ? t('correct') : t('incorrect')}
+                  <p
+                    className={`font-medium ${
+                      isCorrect ? "text-green-800" : "text-red-800"
+                    }`}
+                  >
+                    {isCorrect ? t("correct") : t("incorrect")}
                   </p>
                   {!isCorrect && (
                     <>
                       <p className="text-red-700 text-sm mt-1">
-                        {getAttemptsForCurrentExercise() < 3 
-                          ? `${t('attempt')} ${getAttemptsForCurrentExercise()} ${t('of')} 3`
-                          : t('attemptsExhausted')}
+                        {getAttemptsForCurrentExercise() < 3
+                          ? `${t(
+                              "attempt"
+                            )} ${getAttemptsForCurrentExercise()} ${t("of")} 3`
+                          : t("attemptsExhausted")}
                       </p>
                       {shouldShowSolution() && (
                         <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                          <p className="text-blue-800 font-medium mb-1">💡 {t('solution')}:</p>
-                          <p className="text-blue-900">{currentExercise.soluzione}</p>
+                          <p className="text-blue-800 font-medium mb-1">
+                            💡 {t("solution")}:
+                          </p>
+                          <p className="text-blue-900">
+                            {currentExercise.soluzione}
+                          </p>
                         </div>
                       )}
                     </>
@@ -1058,25 +1105,33 @@ export default function LessonExercisesPage() {
             </div>
           )}
 
-          {!showResult && getAttemptsForCurrentExercise() > 0 && getAttemptsForCurrentExercise() < 3 && !isCurrentExerciseCompleted() && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-              <p className="text-yellow-800 text-sm font-medium">
-                ⚠️ {t('alreadyAttempted')} {getAttemptsForCurrentExercise()} {t('attempts')}. 
-                {t('remaining')} {3 - getAttemptsForCurrentExercise()}.
-              </p>
-            </div>
-          )}
-
-          {getAttemptsForCurrentExercise() >= 3 && !isCurrentExerciseCompleted() && !showResult && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800 text-sm font-medium">
-                ❌ {t('exhaustedAttempts')}
-              </p>
-              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-blue-800 text-sm">💡 {t('solution')}: {getCurrentExercise()?.soluzione}</p>
+          {!showResult &&
+            getAttemptsForCurrentExercise() > 0 &&
+            getAttemptsForCurrentExercise() < 3 &&
+            !isCurrentExerciseCompleted() && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-yellow-800 text-sm font-medium">
+                  ⚠️ {t("alreadyAttempted")} {getAttemptsForCurrentExercise()}{" "}
+                  {t("attempts")}.{t("remaining")}{" "}
+                  {3 - getAttemptsForCurrentExercise()}.
+                </p>
               </div>
-            </div>
-          )}
+            )}
+
+          {getAttemptsForCurrentExercise() >= 3 &&
+            !isCurrentExerciseCompleted() &&
+            !showResult && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-800 text-sm font-medium">
+                  ❌ {t("exhaustedAttempts")}
+                </p>
+                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-blue-800 text-sm">
+                    💡 {t("solution")}: {getCurrentExercise()?.soluzione}
+                  </p>
+                </div>
+              </div>
+            )}
 
           {/* Action Buttons */}
           {renderActionButtons()}
@@ -1085,7 +1140,7 @@ export default function LessonExercisesPage() {
           {isCurrentExerciseCompleted() && !showResult && (
             <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
               <p className="text-green-800 text-sm font-medium">
-                ✅ {t('exerciseAlreadyCompleted')}
+                ✅ {t("exerciseAlreadyCompleted")}
               </p>
             </div>
           )}
@@ -1094,12 +1149,12 @@ export default function LessonExercisesPage() {
         {/* Lesson Progress */}
         <div className="mt-6 bg-white rounded-lg shadow-sm p-4">
           <h3 className="font-medium text-gray-900 mb-3">
-            {t('progressLesson')} {currentLesson.lesson_number}
+            {t("progressLesson")} {currentLesson.lesson_number}
           </h3>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-600">
               {currentLesson.completed_exercises}/
-              {currentLesson.total_exercises} {t('exercisesCompleted')}
+              {currentLesson.total_exercises} {t("exercisesCompleted")}
             </span>
             <span className="text-sm text-gray-600">
               {Math.round(
@@ -1127,20 +1182,20 @@ export default function LessonExercisesPage() {
         {/* Navigation Help */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h4 className="font-medium text-blue-900 mb-2">
-            💡 {t('navigationTips')}
+            💡 {t("navigationTips")}
           </h4>
           <div className="text-sm text-blue-800 space-y-1">
             <p>
-              • <strong>{t('verify')}:</strong> {t('checkAnswerTip')}
+              • <strong>{t("verify")}:</strong> {t("checkAnswerTip")}
             </p>
             <p>
-              • <strong>{t('retry')}:</strong> {t('retryTip')}
+              • <strong>{t("retry")}:</strong> {t("retryTip")}
             </p>
             <p>
-              • <strong>{t('next')}:</strong> {t('nextTip')}
+              • <strong>{t("next")}:</strong> {t("nextTip")}
             </p>
             <p>
-              • <strong>{t('completedExercises')}:</strong> {t('skipTip')}
+              • <strong>{t("completedExercises")}:</strong> {t("skipTip")}
             </p>
           </div>
         </div>
