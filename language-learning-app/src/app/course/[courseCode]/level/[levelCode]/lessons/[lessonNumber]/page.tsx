@@ -670,7 +670,7 @@ export default function LessonExercisesPage() {
         <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
           <p className="text-green-800 font-medium">{t("completeSentence")}:</p>
           <p className="text-green-900 text-lg font-semibold mt-2">
-            "{exercise.frase}"
+            &quot;{exercise.frase}&quot;
           </p>
         </div>
 
@@ -848,7 +848,8 @@ export default function LessonExercisesPage() {
           {pendingSelection && (
             <div className="bg-yellow-50 border border-yellow-200 p-3 rounded mt-3">
               <p className="text-yellow-800 text-sm">
-                {t("selectedWord")} "<strong>{pendingSelection.word}</strong>".
+                {t("selectedWord")} "<strong>{pendingSelection.word}</strong>
+                &quot;.
                 {t("clickAnotherWord")}
               </p>
             </div>
