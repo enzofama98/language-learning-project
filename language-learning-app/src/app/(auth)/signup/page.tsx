@@ -1,8 +1,13 @@
+// FILE: src/app/signup/page.tsx (VERSIONE AGGIORNATA CON TRADUZIONI)
+// Sostituisci il contenuto del file esistente con questo
+
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "@/hooks/useTranslation";
+import LanguageSelector from "@/app/components/LanguageSelector";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -13,35 +18,36 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const validateForm = () => {
     if (!email || !password || !confirmPassword || !code) {
-      setError("Tutti i campi sono obbligatori");
+      setError(t('allFieldsRequired'));
       return false;
     }
     
     if (!/\S+@\S+\.\S+/.test(email)) {
-      setError("Email non valida");
+      setError(t('invalidEmail'));
       return false;
     }
     
     if (password.length < 8) {
-      setError("La password deve essere di almeno 8 caratteri");
+      setError(t('password8Characters'));
       return false;
     }
     
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      setError("La password deve contenere almeno una lettera minuscola, una maiuscola e un numero");
+      setError(t('passwordComplexity'));
       return false;
     }
     
     if (password !== confirmPassword) {
-      setError("Le password non coincidono");
+      setError(t('passwordsDontMatch'));
       return false;
     }
     
     if (code.length < 3) {
-      setError("Il codice di accesso non è valido");
+      setError(t('invalidAccessCode'));
       return false;
     }
     
@@ -67,18 +73,18 @@ export default function RegisterPage() {
 
       if (!codeResponse.ok) {
         const errorData = await codeResponse.json();
-        setError(errorData.error || "Codice non valido");
+        setError(errorData.error || t('invalidCode'));
         return;
       }
 
-      // 2. Registra l'utente con Supabase Auth (senza email confirmation)
+      // 2. Registra l'utente con Supabase Auth
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: undefined, // Disabilita redirect email
+          emailRedirectTo: undefined,
           data: {
-            registration_code: code, // Salva il codice nei metadata
+            registration_code: code,
           }
         }
       });
@@ -86,22 +92,22 @@ export default function RegisterPage() {
       if (signUpError) {
         switch (signUpError.message) {
           case 'User already registered':
-            setError("Questo email è già registrato");
+            setError(t('emailAlreadyRegistered'));
             break;
           case 'Password should be at least 6 characters':
-            setError("La password deve essere di almeno 6 caratteri");
+            setError(t('passwordMinLength'));
             break;
           case 'Signup is disabled':
-            setError("La registrazione è temporaneamente disabilitata");
+            setError(t('registrationDisabled'));
             break;
           default:
-            setError("Errore durante la registrazione: " + signUpError.message);
+            setError(t('registrationError') + ": " + signUpError.message);
         }
         return;
       }
 
       if (data.user) {
-        // 3. Associa il codice all'utente nella tabella codici_sbloccati
+        // 3. Associa il codice all'utente
         const unlockResponse = await fetch("/api/unlock-code", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -114,12 +120,10 @@ export default function RegisterPage() {
 
         if (!unlockResponse.ok) {
           console.error("Errore nell'sblocco del codice, ma utente creato");
-          // Non bloccare la registrazione per questo errore
         }
 
-        setSuccess("Registrazione completata! Verrai reindirizzato al login.");
+        setSuccess(t('registrationCompleted'));
         
-        // Redirect immediato al login
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -127,40 +131,45 @@ export default function RegisterPage() {
 
     } catch (err) {
       console.error("Errore registrazione:", err);
-      setError("Errore imprevisto durante la registrazione");
+      setError(t('unexpectedRegistrationError'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        {/* Language Selector */}
+        <div className="flex justify-end">
+          <LanguageSelector />
+        </div>
+
         <div>
-          <h2 className="text-3xl font-bold text-center text-gray-900">
-            Crea il tuo account
+          <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
+            {t('createAccount')}
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Inserisci i tuoi dati per registrarti
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+            {t('enterDataToRegister')}
           </p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 px-4 py-3 rounded">
               {error}
             </div>
           )}
           
           {success && (
-            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 px-4 py-3 rounded">
               {success}
             </div>
           )}
           
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('email')}
             </label>
             <input
               id="email"
@@ -168,15 +177,18 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="tua@email.com"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm 
+                bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                focus:outline-none focus:ring-blue-500 focus:border-blue-500 
+                dark:focus:ring-blue-400 dark:focus:border-blue-400"
+              placeholder={t('emailPlaceholder')}
               disabled={loading}
             />
           </div>
           
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('password')}
             </label>
             <input
               id="password"
@@ -184,15 +196,18 @@ export default function RegisterPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Almeno 8 caratteri, con maiuscole, minuscole e numeri"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm 
+                bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                focus:outline-none focus:ring-blue-500 focus:border-blue-500
+                dark:focus:ring-blue-400 dark:focus:border-blue-400"
+              placeholder={t('passwordMinLength8')}
               disabled={loading}
             />
           </div>
           
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-              Conferma Password
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('confirmPassword')}
             </label>
             <input
               id="confirmPassword"
@@ -200,15 +215,18 @@ export default function RegisterPage() {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Ripeti la password"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm 
+                bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                focus:outline-none focus:ring-blue-500 focus:border-blue-500
+                dark:focus:ring-blue-400 dark:focus:border-blue-400"
+              placeholder={t('repeatPassword')}
               disabled={loading}
             />
           </div>
           
           <div>
-            <label htmlFor="code" className="block text-sm font-medium text-gray-700">
-              Codice di Accesso
+            <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('accessCode')}
             </label>
             <input
               id="code"
@@ -216,8 +234,11 @@ export default function RegisterPage() {
               required
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Inserisci il codice fornito"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm 
+                bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                focus:outline-none focus:ring-blue-500 focus:border-blue-500
+                dark:focus:ring-blue-400 dark:focus:border-blue-400"
+              placeholder={t('enterProvidedCode')}
               disabled={loading}
             />
           </div>
@@ -227,29 +248,29 @@ export default function RegisterPage() {
             disabled={loading}
             className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white
               ${loading 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
+                ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-green-400'
               }`}
           >
             {loading ? (
               <div className="flex items-center">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Registrazione in corso...
+                {t('registering')}
               </div>
             ) : (
-              'Registrati'
+              t('register')
             )}
           </button>
         </form>
         
         <div className="text-center">
-          <span className="text-sm text-gray-600">
-            Hai già un account?{" "}
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {t('alreadyHaveAccount')}{" "}
             <button
               onClick={() => router.push('/login')}
-              className="font-medium text-blue-600 hover:text-blue-500"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              Accedi qui
+              {t('loginHere')}
             </button>
           </span>
         </div>

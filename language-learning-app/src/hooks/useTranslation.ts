@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // FILE: src/hooks/useTranslation.ts (VERSIONE CORRETTA)
 // Sostituisci il contenuto del file esistente con questo
 
@@ -604,6 +602,205 @@ export const translations: Translations = {
     it: 'Puoi saltare direttamente agli esercizi successivi',
     fr: 'Vous pouvez passer directement aux exercices suivants',
     de: 'Sie können direkt zu den nächsten Übungen springen'
+  },
+
+  // Traduzioni per login e autenticazione
+  'loginToAccount': {
+    it: 'Accedi al tuo account',
+    fr: 'Connectez-vous à votre compte',
+    de: 'Melden Sie sich bei Ihrem Konto an'
+  },
+  'enterCredentials': {
+    it: 'Inserisci le tue credenziali per continuare',
+    fr: 'Entrez vos identifiants pour continuer',
+    de: 'Geben Sie Ihre Anmeldedaten ein, um fortzufahren'
+  },
+  'email': {
+    it: 'Email',
+    fr: 'Email',
+    de: 'E-Mail'
+  },
+  'password': {
+    it: 'Password',
+    fr: 'Mot de passe',
+    de: 'Passwort'
+  },
+  'emailPlaceholder': {
+    it: 'tua@email.com',
+    fr: 'votre@email.com',
+    de: 'ihre@email.com'
+  },
+  'passwordPlaceholder': {
+    it: 'La tua password',
+    fr: 'Votre mot de passe',
+    de: 'Ihr Passwort'
+  },
+  'login': {
+    it: 'Accedi',
+    fr: 'Se connecter',
+    de: 'Anmelden'
+  },
+  'loggingIn': {
+    it: 'Accesso in corso...',
+    fr: 'Connexion en cours...',
+    de: 'Anmeldung läuft...'
+  },
+  'noAccount': {
+    it: 'Non hai un account?',
+    fr: 'Vous n\'avez pas de compte ?',
+    de: 'Haben Sie kein Konto?'
+  },
+  'signUpHere': {
+    it: 'Registrati qui',
+    fr: 'Inscrivez-vous ici',
+    de: 'Hier registrieren'
+  },
+  'emailPasswordRequired': {
+    it: 'Email e password sono obbligatori',
+    fr: 'L\'email et le mot de passe sont obligatoires',
+    de: 'E-Mail und Passwort sind erforderlich'
+  },
+  'invalidEmail': {
+    it: 'Email non valida',
+    fr: 'Email invalide',
+    de: 'Ungültige E-Mail'
+  },
+  'passwordMinLength': {
+    it: 'La password deve essere di almeno 6 caratteri',
+    fr: 'Le mot de passe doit contenir au moins 6 caractères',
+    de: 'Das Passwort muss mindestens 6 Zeichen lang sein'
+  },
+  'invalidCredentials': {
+    it: 'Credenziali non valide',
+    fr: 'Identifiants invalides',
+    de: 'Ungültige Anmeldedaten'
+  },
+  'tooManyRequests': {
+    it: 'Troppi tentativi. Riprova tra qualche minuto.',
+    fr: 'Trop de tentatives. Réessayez dans quelques minutes.',
+    de: 'Zu viele Versuche. Versuchen Sie es in ein paar Minuten erneut.'
+  },
+  'loginError': {
+    it: 'Errore durante il login',
+    fr: 'Erreur lors de la connexion',
+    de: 'Fehler bei der Anmeldung'
+  },
+  'unexpectedLoginError': {
+    it: 'Errore imprevisto durante il login',
+    fr: 'Erreur inattendue lors de la connexion',
+    de: 'Unerwarteter Fehler bei der Anmeldung'
+  },
+
+  // Traduzioni per registrazione
+  'createAccount': {
+    it: 'Crea il tuo account',
+    fr: 'Créez votre compte',
+    de: 'Erstellen Sie Ihr Konto'
+  },
+  'enterDataToRegister': {
+    it: 'Inserisci i tuoi dati per registrarti',
+    fr: 'Entrez vos données pour vous inscrire',
+    de: 'Geben Sie Ihre Daten zur Registrierung ein'
+  },
+  'confirmPassword': {
+    it: 'Conferma Password',
+    fr: 'Confirmer le mot de passe',
+    de: 'Passwort bestätigen'
+  },
+  'accessCode': {
+    it: 'Codice di Accesso',
+    fr: 'Code d\'accès',
+    de: 'Zugangscode'
+  },
+  'passwordMinLength8': {
+    it: 'Almeno 8 caratteri, con maiuscole, minuscole e numeri',
+    fr: 'Au moins 8 caractères, avec majuscules, minuscules et chiffres',
+    de: 'Mindestens 8 Zeichen, mit Groß-, Kleinbuchstaben und Zahlen'
+  },
+  'repeatPassword': {
+    it: 'Ripeti la password',
+    fr: 'Répétez le mot de passe',
+    de: 'Passwort wiederholen'
+  },
+  'enterProvidedCode': {
+    it: 'Inserisci il codice fornito',
+    fr: 'Entrez le code fourni',
+    de: 'Geben Sie den bereitgestellten Code ein'
+  },
+  'register': {
+    it: 'Registrati',
+    fr: 'S\'inscrire',
+    de: 'Registrieren'
+  },
+  'registering': {
+    it: 'Registrazione in corso...',
+    fr: 'Inscription en cours...',
+    de: 'Registrierung läuft...'
+  },
+  'alreadyHaveAccount': {
+    it: 'Hai già un account?',
+    fr: 'Vous avez déjà un compte ?',
+    de: 'Haben Sie bereits ein Konto?'
+  },
+  'loginHere': {
+    it: 'Accedi qui',
+    fr: 'Connectez-vous ici',
+    de: 'Hier anmelden'
+  },
+  'allFieldsRequired': {
+    it: 'Tutti i campi sono obbligatori',
+    fr: 'Tous les champs sont obligatoires',
+    de: 'Alle Felder sind erforderlich'
+  },
+  'password8Characters': {
+    it: 'La password deve essere di almeno 8 caratteri',
+    fr: 'Le mot de passe doit contenir au moins 8 caractères',
+    de: 'Das Passwort muss mindestens 8 Zeichen lang sein'
+  },
+  'passwordComplexity': {
+    it: 'La password deve contenere almeno una lettera minuscola, una maiuscola e un numero',
+    fr: 'Le mot de passe doit contenir au moins une lettre minuscule, une majuscule et un chiffre',
+    de: 'Das Passwort muss mindestens einen Kleinbuchstaben, einen Großbuchstaben und eine Zahl enthalten'
+  },
+  'passwordsDontMatch': {
+    it: 'Le password non coincidono',
+    fr: 'Les mots de passe ne correspondent pas',
+    de: 'Die Passwörter stimmen nicht überein'
+  },
+  'invalidAccessCode': {
+    it: 'Il codice di accesso non è valido',
+    fr: 'Le code d\'accès n\'est pas valide',
+    de: 'Der Zugangscode ist nicht gültig'
+  },
+  'invalidCode': {
+    it: 'Codice non valido',
+    fr: 'Code invalide',
+    de: 'Ungültiger Code'
+  },
+  'emailAlreadyRegistered': {
+    it: 'Questa email è già registrata',
+    fr: 'Cet email est déjà enregistré',
+    de: 'Diese E-Mail ist bereits registriert'
+  },
+  'registrationDisabled': {
+    it: 'La registrazione è temporaneamente disabilitata',
+    fr: 'L\'inscription est temporairement désactivée',
+    de: 'Die Registrierung ist vorübergehend deaktiviert'
+  },
+  'registrationError': {
+    it: 'Errore durante la registrazione',
+    fr: 'Erreur lors de l\'inscription',
+    de: 'Fehler bei der Registrierung'
+  },
+  'registrationCompleted': {
+    it: 'Registrazione completata! Verrai reindirizzato al login.',
+    fr: 'Inscription terminée ! Vous serez redirigé vers la connexion.',
+    de: 'Registrierung abgeschlossen! Sie werden zur Anmeldung weitergeleitet.'
+  },
+  'unexpectedRegistrationError': {
+    it: 'Errore imprevisto durante la registrazione',
+    fr: 'Erreur inattendue lors de l\'inscription',
+    de: 'Unerwarteter Fehler bei der Registrierung'
   }
 };
 
