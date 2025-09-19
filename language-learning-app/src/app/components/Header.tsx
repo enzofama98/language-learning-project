@@ -134,9 +134,6 @@ export default function Header({
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
                         {user.email}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Account attivo
-                      </p>
                     </div>
 
                     {/* Menu items */}
@@ -150,7 +147,7 @@ export default function Header({
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                         >
                           <Plus className="w-4 h-4" />
-                          <span>Aggiungi Corso</span>
+                          <span>New course</span>
                         </button>
                       )}
 
@@ -163,7 +160,7 @@ export default function Header({
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                         >
                           <Settings className="w-4 h-4" />
-                          <span>Impostazioni</span>
+                          <span>Settings</span>
                         </button>
                       )}
 

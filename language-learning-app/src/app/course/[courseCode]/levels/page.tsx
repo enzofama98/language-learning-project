@@ -360,7 +360,7 @@ export default function LevelsOverviewPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Livello {level.level}
+                        {level.level}
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {level.total_lessons} {t('lessons')}
