@@ -646,9 +646,9 @@ export default function HomePage() {
                         )}
                         {button.enabled && progress && (
                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 space-x-3">
-                            <span>{progress.completed_exercises}/{progress.total_exercises} {t('exercises')}</span>
+                            {/* <span>{progress.completed_exercises}/{progress.total_exercises} {t('exercises')}</span>
                             <span>•</span>
-                            <span>{progress.completed_lessons}/{progress.total_lessons} {t('lessons')}</span>
+                            <span>{progress.completed_lessons}/{progress.total_lessons} {t('lessons')}</span> */}
                           </div>
                         )}
                       </div>
