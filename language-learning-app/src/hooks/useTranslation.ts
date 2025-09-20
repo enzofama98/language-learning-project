@@ -469,9 +469,9 @@ export const translations: Translations = {
     de: 'Gebildeter Satz'
   },
   'matchWordsTranslation': {
-    it: 'Abbina ogni parola inglese alla sua traduzione italiana',
-    fr: 'Associez chaque mot anglais à sa traduction française',
-    de: 'Ordnen Sie jedes englische Wort seiner deutschen Übersetzung zu'
+    it: 'Abbina ogni parola alla sua traduzione',
+    fr: 'Associez chaque mot à sa traduction',
+    de: 'Ordnen Sie jedes Wort seiner Übersetzung zu'
   },
   'clickTwoWords': {
     it: 'Clicca due parole per formare una coppia. Ogni coppia avrà un colore diverso.',

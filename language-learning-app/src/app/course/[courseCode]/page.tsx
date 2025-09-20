@@ -545,20 +545,24 @@ const loadExercisesAndProgress = async (userId: string) => {
     resetExerciseState();
   };
 
+  const removePunctuation = (text: string): string => {
+    return text.replace(/[.,!?;:'"()[\]{}]/g, '').trim();
+  };
+
   const validateTraduci = (exercise: Exercise): boolean => {
     const userAnswer = selectedOptions
       .sort((a, b) => a.order - b.order)
       .map((opt) => opt.value)
       .join(" ");
 
-    return userAnswer.toLowerCase() === exercise.soluzione.toLowerCase();
+    return removePunctuation(userAnswer.toLowerCase()) === removePunctuation(exercise.soluzione.toLowerCase());
   };
 
   const validateCompletaFrase = (exercise: Exercise): boolean => {
     return (
       selectedOptions.length === 1 &&
-      selectedOptions[0].value.toLowerCase() ===
-        exercise.soluzione.toLowerCase()
+      removePunctuation(selectedOptions[0].value.toLowerCase()) ===
+        removePunctuation(exercise.soluzione.toLowerCase())
     );
   };
 
@@ -568,7 +572,7 @@ const loadExercisesAndProgress = async (userId: string) => {
       .map((opt) => opt.value)
       .join(" ");
 
-    return userAnswer.toLowerCase() === exercise.soluzione.toLowerCase();
+    return removePunctuation(userAnswer.toLowerCase()) === removePunctuation(exercise.soluzione.toLowerCase());
   };
 
   const validateSelezionaCoppie = (exercise: Exercise): boolean => {
