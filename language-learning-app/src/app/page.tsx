@@ -73,7 +73,9 @@ export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [courseProgressMap, setCourseProgressMap] = useState<Map<string, CourseProgress>>(new Map());
+  const [courseProgressMap, setCourseProgressMap] = useState<
+    Map<string, CourseProgress>
+  >(new Map());
   const [error, setError] = useState<string | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const router = useRouter();
@@ -90,7 +92,7 @@ export default function HomePage() {
       } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        router.push("/login");
+        router.push("/signup");
         return;
       }
 
@@ -110,7 +112,7 @@ export default function HomePage() {
       });
 
       if (!response.ok) {
-        throw new Error(t('courseLoadError'));
+        throw new Error(t("courseLoadError"));
       }
 
       const buttonsData = await response.json();
@@ -119,7 +121,7 @@ export default function HomePage() {
       loadUserStats(token);
     } catch (err) {
       console.error("Errore caricamento dati:", err);
-      setError(err instanceof Error ? err.message : t('error'));
+      setError(err instanceof Error ? err.message : t("error"));
     } finally {
       setLoading(false);
     }
@@ -155,13 +157,13 @@ export default function HomePage() {
           longestStreak: 12,
           lastActivityDate: new Date().toISOString().split("T")[0],
           weeklyProgress: [
-            { day: t('dayMon'), minutes: 45 },
-            { day: t('dayTue'), minutes: 30 },
-            { day: t('dayWed'), minutes: 60 },
-            { day: t('dayThu'), minutes: 25 },
-            { day: t('dayFri'), minutes: 40 },
-            { day: t('daySat'), minutes: 35 },
-            { day: t('daySun'), minutes: 50 },
+            { day: t("dayMon"), minutes: 45 },
+            { day: t("dayTue"), minutes: 30 },
+            { day: t("dayWed"), minutes: 60 },
+            { day: t("dayThu"), minutes: 25 },
+            { day: t("dayFri"), minutes: 40 },
+            { day: t("daySat"), minutes: 35 },
+            { day: t("daySun"), minutes: 50 },
           ],
           totalExercises: 150,
           completedExercises: 87,
@@ -187,7 +189,15 @@ export default function HomePage() {
         weeklyProgress: Array(7)
           .fill(0)
           .map((_, i) => ({
-            day: [t('dayMon'), t('dayTue'), t('dayWed'), t('dayThu'), t('dayFri'), t('daySat'), t('daySun')][i],
+            day: [
+              t("dayMon"),
+              t("dayTue"),
+              t("dayWed"),
+              t("dayThu"),
+              t("dayFri"),
+              t("daySat"),
+              t("daySun"),
+            ][i],
             minutes: 0,
           })),
         totalExercises: 0,
@@ -207,33 +217,39 @@ export default function HomePage() {
       if (!user) return;
 
       const progressPromises = buttons
-        .filter(button => button.enabled)
+        .filter((button) => button.enabled)
         .map(async (button) => {
           try {
-            const { data, error } = await supabase.rpc('get_course_progress', {
+            const { data, error } = await supabase.rpc("get_course_progress", {
               p_user_id: user.id,
-              p_language_code: button.language_code
+              p_language_code: button.language_code,
             });
 
             if (error) {
-              console.error(`Errore progresso per ${button.language_code}:`, error);
+              console.error(
+                `Errore progresso per ${button.language_code}:`,
+                error
+              );
               return null;
             }
 
             return {
               language_code: button.language_code,
-              progress: data
+              progress: data,
             };
           } catch (err) {
-            console.error(`Errore caricamento progresso ${button.language_code}:`, err);
+            console.error(
+              `Errore caricamento progresso ${button.language_code}:`,
+              err
+            );
             return null;
           }
         });
 
       const results = await Promise.all(progressPromises);
-      
+
       const progressMap = new Map<string, CourseProgress>();
-      results.forEach(result => {
+      results.forEach((result) => {
         if (result && result.progress) {
           progressMap.set(result.language_code, result.progress);
         }
@@ -255,7 +271,8 @@ export default function HomePage() {
     if (!button.enabled) return;
 
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await supabase.auth.getSession()).data.session
+        ?.access_token;
       if (!token) {
         router.push("/login");
         return;
@@ -290,7 +307,7 @@ export default function HomePage() {
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-xl text-gray-600 dark:text-gray-300">
-            {t('loading')}
+            {t("loading")}
           </p>
         </div>
       </div>
@@ -303,14 +320,14 @@ export default function HomePage() {
         <div className="text-center">
           <div className="text-6xl mb-4">⚠️</div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {t('error')}
+            {t("error")}
           </h2>
           <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
           >
-            {t('retry')}
+            {t("retry")}
           </button>
         </div>
       </div>
@@ -327,24 +344,24 @@ export default function HomePage() {
         <div className="mb-8 flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {t('yourCourses')}
+              {t("yourCourses")}
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
-              {t('welcome')}, {user?.email}! {t('selectCourse')}
+              {t("welcome")}, {user?.email}! {t("selectCourse")}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {/* Selettore lingua */}
             <LanguageSelector />
-            
+
             {/* Bottone I nostri libri */}
             <button
               onClick={() => router.push("/books")}
               className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
             >
               <BookIcon className="w-5 h-5" />
-              <span className="font-medium">{t('ourBooks')}</span>
+              <span className="font-medium">{t("ourBooks")}</span>
             </button>
           </div>
         </div>
@@ -357,7 +374,7 @@ export default function HomePage() {
                 {enabledCount}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                {t('available')}
+                {t("available")}
               </div>
             </div>
             <div>
@@ -365,7 +382,7 @@ export default function HomePage() {
                 {disabledCount}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                {t('blocked')}
+                {t("blocked")}
               </div>
             </div>
             <div>
@@ -373,7 +390,7 @@ export default function HomePage() {
                 {buttons.length}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                {t('total')}
+                {t("total")}
               </div>
             </div>
           </div>
@@ -382,7 +399,8 @@ export default function HomePage() {
         {/* Dashboard Progressi Utente */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-8 border border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <Trophy className="w-5 h-5 mr-2 text-yellow-500" />{t('yourProgress')}
+            <Trophy className="w-5 h-5 mr-2 text-yellow-500" />
+            {t("yourProgress")}
             {statsLoading && (
               <div className="ml-3 w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
             )}
@@ -395,14 +413,15 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {t('studyHours')}
+                      {t("studyHours")}
                     </p>
                     <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">
                       {userStats.totalHoursStudied}h
                     </p>
                     {userStats.averageMinutesPerDay && (
                       <p className="text-xs text-blue-600 dark:text-blue-400">
-                        {Math.round(userStats.averageMinutesPerDay)}{t('minutesPerDay')}
+                        {Math.round(userStats.averageMinutesPerDay)}
+                        {t("minutesPerDay")}
                       </p>
                     )}
                   </div>
@@ -415,7 +434,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                      {t('completed')}
+                      {t("completed")}
                     </p>
                     <p className="text-2xl font-bold text-green-800 dark:text-green-200">
                       {userStats.completedCourses}/{userStats.totalCourses}
@@ -440,13 +459,13 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                      {t('currentStreak')}
+                      {t("currentStreak")}
                     </p>
                     <p className="text-2xl font-bold text-orange-800 dark:text-orange-200">
                       {userStats.currentStreak}
                     </p>
                     <p className="text-xs text-orange-600 dark:text-orange-400">
-                      {t('days')} ({t('max')}: {userStats.longestStreak})
+                      {t("days")} ({t("max")}: {userStats.longestStreak})
                     </p>
                   </div>
                   <Target className="w-8 h-8 text-orange-500" />
@@ -458,12 +477,12 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                      {t('lastActivity')}
+                      {t("lastActivity")}
                     </p>
                     <p className="text-sm font-bold text-purple-800 dark:text-purple-200">
                       {userStats.lastActivityDate ===
                       new Date().toISOString().split("T")[0]
-                        ? t('today')
+                        ? t("today")
                         : userStats.lastActivityDate}
                     </p>
                     <p className="text-xs text-purple-600 dark:text-purple-400">
@@ -487,14 +506,14 @@ export default function HomePage() {
             <div className="mt-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3 flex items-center">
                 <TrendingUp className="w-4 h-4 mr-2 text-blue-500" />
-                {t('weeklyActivity')}
+                {t("weeklyActivity")}
                 <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
                   (
                   {userStats.weeklyProgress.reduce(
                     (sum, day) => sum + day.minutes,
                     0
                   )}{" "}
-                  {t('totalMinutes')})
+                  {t("totalMinutes")})
                 </span>
               </h3>
               <div className="flex items-end space-x-2 h-32 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
@@ -545,7 +564,7 @@ export default function HomePage() {
                       {userStats.completedExercises}/{userStats.totalExercises}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      {t('exercises')}
+                      {t("exercises")}
                     </div>
                   </div>
                 )}
@@ -555,7 +574,7 @@ export default function HomePage() {
                       {userStats.totalSessions}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      {t('sessions')}
+                      {t("sessions")}
                     </div>
                   </div>
                 )}
@@ -565,7 +584,7 @@ export default function HomePage() {
                       {userStats.totalActiveDays}
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-400">
-                      {t('activeDays')}
+                      {t("activeDays")}
                     </div>
                   </div>
                 )}
@@ -576,14 +595,14 @@ export default function HomePage() {
         {/* Lista Corsi */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {t('availableCourses')}
+            {t("availableCourses")}
           </h2>
 
           {buttons.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 dark:text-gray-400">
-                {t('noCourses')}
+                {t("noCourses")}
               </p>
             </div>
           ) : (
@@ -591,7 +610,7 @@ export default function HomePage() {
               const progress = courseProgressMap.get(button.language_code);
               const percentage = progress?.completion_percentage || 0;
               const isCompleted = percentage === 100;
-              
+
               return (
                 <div
                   key={button.id}
@@ -667,7 +686,7 @@ export default function HomePage() {
                     <div className="mt-4">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {t('progress')}
+                          {t("progress")}
                         </span>
                         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                           {Math.round(percentage)}%
@@ -687,12 +706,15 @@ export default function HomePage() {
                       </div>
                       {isCompleted && (
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                          ✅ {t('courseCompleted')}
+                          ✅ {t("courseCompleted")}
                         </p>
                       )}
                       {progress.last_activity && !isCompleted && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {t('lastAccess')}: {new Date(progress.last_activity).toLocaleDateString('it-IT')}
+                          {t("lastAccess")}:{" "}
+                          {new Date(progress.last_activity).toLocaleDateString(
+                            "it-IT"
+                          )}
                         </p>
                       )}
                     </div>
@@ -702,7 +724,7 @@ export default function HomePage() {
                   {!button.enabled && (
                     <div className="absolute top-4 right-4">
                       <span className="px-2 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
-                        {t('blocked')}
+                        {t("blocked")}
                       </span>
                     </div>
                   )}
