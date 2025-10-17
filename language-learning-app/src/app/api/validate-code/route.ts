@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       console.warn(`Tentativo codice non valido: ${sanitizedCode} da IP: ${request.headers.get('x-forwarded-for') || 'unknown'}`);
       
       return NextResponse.json({ 
-        error: 'Codice non trovato o non valido' 
+        error: 'Invalid Code' 
       }, { status: 404 });
     }
 

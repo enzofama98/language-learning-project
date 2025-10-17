@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, ExternalLink, Home } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Book {
   id: number;
@@ -80,6 +81,7 @@ export default function BooksPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [itemsPerView, setItemsPerView] = useState(3);
+  const { t } = useTranslation();
 
   // Verifica autenticazione
   useEffect(() => {
@@ -134,14 +136,14 @@ export default function BooksPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              I Nostri Libri
+              <h1>{t('ourBooksPage')}</h1>
             </h1>
             <button
               onClick={() => router.push("/")}
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors duration-200"
             >
               <Home className="w-4 h-4" />
-              <span>Torna ai corsi</span>
+              <span>{t('backToCourses')}</span>
             </button>
           </div>
         </div>
@@ -152,8 +154,7 @@ export default function BooksPage() {
         {/* Intro */}
         <div className="text-center mb-12">
           <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            Scopri la nostra selezione di libri per approfondire le tue conoscenze di programmazione.
-            Clicca su un libro per acquistarlo su Amazon.
+            <p>{t('booksIntroText')}</p>
           </p>
         </div>
 
@@ -263,7 +264,7 @@ export default function BooksPage() {
         {/* Info aggiuntive */}
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Tutti i libri sono disponibili su Amazon. I prezzi potrebbero variare.
+            <p>{t('booksDisclaimer')}</p>
           </p>
         </div>
       </div>

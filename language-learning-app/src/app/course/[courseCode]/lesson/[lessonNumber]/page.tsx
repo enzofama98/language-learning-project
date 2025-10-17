@@ -1265,10 +1265,6 @@ if (!currentExercise) {
               • <strong>Avanti:</strong> Passa al prossimo esercizio quando hai
               completato quello corrente
             </p>
-            <p>
-              • <strong>Esercizi completati:</strong> Puoi saltare direttamente
-              agli esercizi successivi
-            </p>
           </div>
         </div>
       </div>

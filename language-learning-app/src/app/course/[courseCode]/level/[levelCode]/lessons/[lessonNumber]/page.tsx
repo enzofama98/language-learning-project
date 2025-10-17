@@ -1200,9 +1200,6 @@ export default function LessonExercisesPage() {
             <p>
               • <strong>{t("next")}:</strong> {t("nextTip")}
             </p>
-            <p>
-              • <strong>{t("completedExercises")}:</strong> {t("skipTip")}
-            </p>
           </div>
         </div>
       </div>

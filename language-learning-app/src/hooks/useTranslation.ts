@@ -604,6 +604,71 @@ export const translations: Translations = {
     de: 'Sie können direkt zu den nächsten Übungen springen'
   },
 
+  'newCourse': {
+  it: 'Nuovo corso',
+  fr: 'Nouveau cours',
+  de: 'Neuer Kurs'
+},
+'settings': {
+  it: 'Impostazioni',
+  fr: 'Paramètres',
+  de: 'Einstellungen'
+},
+'logout': {
+  it: 'Esci',
+  fr: 'Se déconnecter',
+  de: 'Abmelden'
+},
+'changePassword': {
+  it: 'Cambia Password',
+  fr: 'Changer le mot de passe',
+  de: 'Passwort ändern'
+},
+'currentPassword': {
+  it: 'Password Attuale',
+  fr: 'Mot de passe actuel',
+  de: 'Aktuelles Passwort'
+},
+'newPassword': {
+  it: 'Nuova Password',
+  fr: 'Nouveau mot de passe',
+  de: 'Neues Passwort'
+},
+'confirmNewPassword': {
+  it: 'Conferma Nuova Password',
+  fr: 'Confirmer le nouveau mot de passe',
+  de: 'Neues Passwort bestätigen'
+},
+'allFieldsRequired': {
+  it: 'Tutti i campi sono obbligatori',
+  fr: 'Tous les champs sont obligatoires',
+  de: 'Alle Felder sind erforderlich'
+},
+'passwordsDontMatch': {
+  it: 'Le nuove password non coincidono',
+  fr: 'Les nouveaux mots de passe ne correspondent pas',
+  de: 'Die neuen Passwörter stimmen nicht überein'
+},
+'updatingPassword': {
+  it: 'Aggiornando...',
+  fr: 'Mise à jour...',
+  de: 'Aktualisierung...'
+},
+'updatePassword': {
+  it: 'Aggiorna Password',
+  fr: 'Mettre à jour le mot de passe',
+  de: 'Passwort aktualisieren'
+},
+'close': {
+  it: 'Chiudi',
+  fr: 'Fermer',
+  de: 'Schließen'
+},
+'passwordUpdatedSuccess': {
+  it: 'Password aggiornata con successo!',
+  fr: 'Mot de passe mis à jour avec succès !',
+  de: 'Passwort erfolgreich aktualisiert!'
+},
   // Traduzioni per login e autenticazione
   'loginToAccount': {
     it: 'Accedi al tuo account',
@@ -747,11 +812,6 @@ export const translations: Translations = {
     fr: 'Connectez-vous ici',
     de: 'Hier anmelden'
   },
-  'allFieldsRequired': {
-    it: 'Tutti i campi sono obbligatori',
-    fr: 'Tous les champs sont obligatoires',
-    de: 'Alle Felder sind erforderlich'
-  },
   'password8Characters': {
     it: 'La password deve essere di almeno 8 caratteri',
     fr: 'Le mot de passe doit contenir au moins 8 caractères',
@@ -761,11 +821,6 @@ export const translations: Translations = {
     it: 'La password deve contenere almeno una lettera minuscola, una maiuscola e un numero',
     fr: 'Le mot de passe doit contenir au moins une lettre minuscule, une majuscule et un chiffre',
     de: 'Das Passwort muss mindestens einen Kleinbuchstaben, einen Großbuchstaben und eine Zahl enthalten'
-  },
-  'passwordsDontMatch': {
-    it: 'Le password non coincidono',
-    fr: 'Les mots de passe ne correspondent pas',
-    de: 'Die Passwörter stimmen nicht überein'
   },
   'invalidAccessCode': {
     it: 'Il codice di accesso non è valido',
@@ -801,7 +856,37 @@ export const translations: Translations = {
     it: 'Errore imprevisto durante la registrazione',
     fr: 'Erreur inattendue lors de l\'inscription',
     de: 'Unerwarteter Fehler bei der Registrierung'
-  }
+  },
+  'ourBooksPage': {
+  it: 'I Nostri Libri',
+  fr: 'Nos Livres',
+  de: 'Unsere Bücher'
+},
+'backToCourses': {
+  it: 'Torna ai corsi',
+  fr: 'Retour aux cours',
+  de: 'Zurück zu den Kursen'
+},
+'booksIntroText': {
+  it: 'Scopri la nostra selezione di libri per approfondire le tue conoscenze di programmazione. Clicca su un libro per acquistarlo su Amazon.',
+  fr: 'Découvrez notre sélection de livres pour approfondir vos connaissances en programmation. Cliquez sur un livre pour l\'acheter sur Amazon.',
+  de: 'Entdecken Sie unsere Bücherauswahl, um Ihre Programmierkenntnisse zu vertiefen. Klicken Sie auf ein Buch, um es bei Amazon zu kaufen.'
+},
+'booksDisclaimer': {
+  it: 'Tutti i libri sono disponibili su Amazon. I prezzi potrebbero variare.',
+  fr: 'Tous les livres sont disponibles sur Amazon. Les prix peuvent varier.',
+  de: 'Alle Bücher sind bei Amazon erhältlich. Die Preise können variieren.'
+},
+'username': {
+  it: 'Nome utente',
+  fr: 'Nom d\'utilisateur',
+  de: 'Benutzername'
+},
+'usernamePlaceholder': {
+  it: 'Il tuo nome utente',
+  fr: 'Votre nom d\'utilisateur',
+  de: 'Ihr Benutzername'
+}
 };
 
 // Stato globale per la lingua corrente

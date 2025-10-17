@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { User, Settings, LogOut, Plus, Moon, Sun } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface HeaderProps {
   user?: {
@@ -31,6 +32,7 @@ export default function Header({
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { t } = useTranslation();
 
   // Gestione tema
   useEffect(() => {
@@ -147,7 +149,7 @@ export default function Header({
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                         >
                           <Plus className="w-4 h-4" />
-                          <span>New course</span>
+                          <span>{t('newCourse')}</span> 
                         </button>
                       )}
 
@@ -160,7 +162,7 @@ export default function Header({
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                         >
                           <Settings className="w-4 h-4" />
-                          <span>Settings</span>
+                          <span>{t('settings')}</span> 
                         </button>
                       )}
 
@@ -170,7 +172,7 @@ export default function Header({
                           className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center space-x-2"
                         >
                           <LogOut className="w-4 h-4" />
-                          <span>Logout</span>
+                          <span>{t('logout')}</span> 
                         </button>
                       )}
                     </div>
@@ -259,7 +261,7 @@ function AddCourseModal({
         return;
       }
 
-      setSuccess("Corso aggiunto con successo!");
+      setSuccess("Valid Code!");
       setCourseCode("");
 
       // Ricarica la pagina dopo un breve delay
@@ -277,20 +279,16 @@ function AddCourseModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          Aggiungi Nuovo Corso
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Codice Corso
-            </label>
             <input
               type="text"
               value={courseCode}
               onChange={(e) => setCourseCode(e.target.value.toUpperCase())}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="Inserisci il codice del corso"
+              placeholder="Code"
               disabled={loading}
             />
           </div>
@@ -316,14 +314,14 @@ function AddCourseModal({
               className="flex-1 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
               disabled={loading}
             >
-              Annulla
+              Back
             </button>
             <button
               type="submit"
               className="flex-1 px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={loading}
             >
-              {loading ? "Aggiungendo..." : "Aggiungi"}
+              {loading ? "Loading..." : "OK"}
             </button>
           </div>
         </form>
@@ -350,6 +348,7 @@ function SettingsModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -405,18 +404,18 @@ function SettingsModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-          Impostazioni
+          <h2>{t('settings')}</h2>
         </h2>
         {/* Sezione cambio password */}
         <div className="mb-6">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-            Cambia Password
+            <h3>{t('changePassword')}</h3>
           </h3>
 
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Password Attuale
+                <label>{t('currentPassword')}</label>
               </label>
               <input
                 type="password"
@@ -429,7 +428,7 @@ function SettingsModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nuova Password
+                <label>{t('newPassword')}</label>
               </label>
               <input
                 type="password"
@@ -442,7 +441,7 @@ function SettingsModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Conferma Nuova Password
+                <label>{t('confirmNewPassword')}</label>
               </label>
               <input
                 type="password"
@@ -464,7 +463,7 @@ function SettingsModal({
             {success && (
               <div className="p-3 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-700 rounded-md">
                 <p className="text-sm text-green-700 dark:text-green-300">
-                  {success}
+                  {success && <p>{t('passwordUpdatedSuccess')}</p>}
                 </p>
               </div>
             )}
@@ -474,7 +473,7 @@ function SettingsModal({
               className="w-full px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
               disabled={loading}
             >
-              {loading ? "Aggiornando..." : "Aggiorna Password"}
+              {loading ? t('updatingPassword') : t('updatePassword')}
             </button>
           </form>
         </div>
@@ -485,7 +484,7 @@ function SettingsModal({
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
           >
-            Chiudi
+            {t('close')}
           </button>
         </div>
       </div>

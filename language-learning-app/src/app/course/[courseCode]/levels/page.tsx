@@ -372,10 +372,10 @@ export default function LevelsOverviewPage() {
                   )}
                 </div>
 
-                {/* Description */}
+                {/* Description
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   {level.description}
-                </p>
+                </p> */}
 
                 {/* Navigation arrow */}
                 {!level.is_locked && (
