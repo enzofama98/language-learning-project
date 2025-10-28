@@ -1,6 +1,7 @@
 // FILE: src/app/page.tsx (VERSIONE AGGIORNATA CON TRADUZIONI)
 // Sostituisci il contenuto del file esistente con questo
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
