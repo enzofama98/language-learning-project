@@ -8,16 +8,16 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { 
-  BookOpen, 
-  CheckCircle, 
-  Lock, 
-  PlayCircle, 
+import {
+  BookOpen,
+  CheckCircle,
+  Lock,
+  PlayCircle,
   ChevronRight,
   ChevronLeft,
   Home,
   Trophy,
-  Clock
+  Clock,
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import LanguageSelector from "@/app/components/LanguageSelector";
@@ -54,7 +54,10 @@ export default function LevelLessonsPage() {
   const [courseName, setCourseName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [overallProgress, setOverallProgress] = useState({ completed: 0, total: 0 });
+  const [overallProgress, setOverallProgress] = useState({
+    completed: 0,
+    total: 0,
+  });
 
   useEffect(() => {
     initializePage();
@@ -62,7 +65,10 @@ export default function LevelLessonsPage() {
 
   const initializePage = async () => {
     try {
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: authError,
+      } = await supabase.auth.getSession();
 
       if (authError || !session) {
         router.push("/");
@@ -76,7 +82,7 @@ export default function LevelLessonsPage() {
 
       const hasAccess = await checkCourseAccess(session.user.id, courseCode);
       if (!hasAccess) {
-        setError(t('noAccess'));
+        setError(t("noAccess"));
         return;
       }
 
@@ -84,13 +90,16 @@ export default function LevelLessonsPage() {
       await loadLessonsOverview(session.user.id);
     } catch (err) {
       console.error("Errore inizializzazione:", err);
-      setError(t('courseLoadError'));
+      setError(t("courseLoadError"));
     } finally {
       setLoading(false);
     }
   };
 
-  const checkCourseAccess = async (userId: string, courseCode: string): Promise<boolean> => {
+  const checkCourseAccess = async (
+    userId: string,
+    courseCode: string
+  ): Promise<boolean> => {
     try {
       const { data, error } = await supabase
         .from("codici_sbloccati")
@@ -143,7 +152,7 @@ export default function LevelLessonsPage() {
       if (progressError) throw progressError;
 
       const completedExercises = new Set(
-        progress?.map(p => p.exercise_id) || []
+        progress?.map((p) => p.exercise_id) || []
       );
 
       const lessonMap = new Map<number, Exercise[]>();
@@ -153,7 +162,7 @@ export default function LevelLessonsPage() {
         }
         lessonMap.get(ex.lezione)!.push({
           id: ex.id,
-          completed: completedExercises.has(ex.id)
+          completed: completedExercises.has(ex.id),
         });
       });
 
@@ -164,18 +173,19 @@ export default function LevelLessonsPage() {
       const lessonsArray: LessonInfo[] = Array.from(lessonMap.entries())
         .sort(([a], [b]) => a - b)
         .map(([lessonNumber, exercises]) => {
-          const completedCount = exercises.filter(ex => ex.completed).length;
+          const completedCount = exercises.filter((ex) => ex.completed).length;
           const totalCount = exercises.length;
           const isCompleted = completedCount === totalCount;
-          const progressPercentage = totalCount > 0 
-            ? Math.round((completedCount / totalCount) * 100) 
-            : 0;
+          const progressPercentage =
+            totalCount > 0
+              ? Math.round((completedCount / totalCount) * 100)
+              : 0;
 
           totalCompleted += completedCount;
           totalExercises += totalCount;
 
           const isLocked = !previousLessonCompleted;
-          
+
           if (!isLocked) {
             previousLessonCompleted = isCompleted;
           }
@@ -187,14 +197,14 @@ export default function LevelLessonsPage() {
             exercises: exercises,
             is_locked: isLocked,
             is_completed: isCompleted,
-            progress_percentage: progressPercentage
+            progress_percentage: progressPercentage,
           };
         });
 
       setLessons(lessonsArray);
-      setOverallProgress({ 
-        completed: totalCompleted, 
-        total: totalExercises 
+      setOverallProgress({
+        completed: totalCompleted,
+        total: totalExercises,
       });
     } catch (err) {
       console.error("Errore caricamento lezioni:", err);
@@ -204,11 +214,13 @@ export default function LevelLessonsPage() {
 
   const handleLessonClick = (lesson: LessonInfo) => {
     if (lesson.is_locked) {
-      alert(t('unlockPreviousLesson'));
+      alert(t("unlockPreviousLesson"));
       return;
     }
 
-    router.push(`/course/${courseCode}/level/${levelCode}/lessons/${lesson.lesson_number}`);
+    router.push(
+      `/course/${courseCode}/level/${levelCode}/lessons/${lesson.lesson_number}`
+    );
   };
 
   if (loading) {
@@ -216,7 +228,7 @@ export default function LevelLessonsPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">{t('loadingLessons')}</p>
+          <p className="text-xl text-gray-600">{t("loadingLessons")}</p>
         </div>
       </div>
     );
@@ -227,55 +239,60 @@ export default function LevelLessonsPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-6xl mb-4">⚠</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('error')}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {t("error")}
+          </h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => router.push("/")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
           >
-            {t('backToHome')}
+            {t("backToHome")}
           </button>
         </div>
       </div>
     );
   }
 
-  const overallPercentage = overallProgress.total > 0 
-    ? Math.round((overallProgress.completed / overallProgress.total) * 100)
-    : 0;
+  const overallPercentage =
+    overallProgress.total > 0
+      ? Math.round((overallProgress.completed / overallProgress.total) * 100)
+      : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.push(`/course/${courseCode}/levels`)}
-                className="flex items-center gap-1 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                <span className="text-sm">{t('backToLevels')}</span>
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {courseName} - {levelCode}
-                </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {t('selectLesson')}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageSelector />
-              <button
-                onClick={() => router.push("/")}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
-              >
-                <Home className="w-4 h-4" />
-                <span>{t('home')}</span>
-              </button>
+          {/* Sezione superiore: pulsanti lingua + home */}
+          <div className="flex items-center justify-end gap-4 mb-4">
+            <LanguageSelector />
+            <button
+              onClick={() => router.push("/")}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
+            >
+              <Home className="w-4 h-4" />
+              <span>{t("home")}</span>
+            </button>
+          </div>
+
+          {/* Sezione inferiore: pulsante indietro + titolo + descrizione */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push(`/course/${courseCode}/levels`)}
+              className="flex items-center gap-1 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="text-sm">{t("backToLevels")}</span>
+            </button>
+
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {courseName} - {levelCode}
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {t("selectLesson")}
+              </p>
             </div>
           </div>
         </div>
@@ -287,7 +304,7 @@ export default function LevelLessonsPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-500" />
-              {t('levelProgress')} {levelCode}
+              {t("levelProgress")} {levelCode}
             </h2>
             <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {overallPercentage}%
@@ -300,7 +317,8 @@ export default function LevelLessonsPage() {
             ></div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            {overallProgress.completed} di {overallProgress.total} {t('exercisesCompleted')}
+            {overallProgress.completed} di {overallProgress.total}{" "}
+            {t("exercisesCompleted")}
           </p>
         </div>
       </div>
@@ -330,13 +348,15 @@ export default function LevelLessonsPage() {
               {/* Lesson content */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                    lesson.is_locked
-                      ? "bg-gray-100 dark:bg-gray-700 text-gray-400"
-                      : lesson.is_completed
-                      ? "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
-                      : "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
-                  }`}>
+                  <div
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      lesson.is_locked
+                        ? "bg-gray-100 dark:bg-gray-700 text-gray-400"
+                        : lesson.is_completed
+                        ? "bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400"
+                        : "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400"
+                    }`}
+                  >
                     {lesson.is_locked ? (
                       <Lock className="w-6 h-6" />
                     ) : lesson.is_completed ? (
@@ -347,10 +367,10 @@ export default function LevelLessonsPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {t('lesson')} {lesson.lesson_number}
+                      {t("lesson")} {lesson.lesson_number}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {lesson.total_exercises} {t('exercises')}
+                      {lesson.total_exercises} {t("exercises")}
                     </p>
                   </div>
                 </div>
@@ -365,8 +385,8 @@ export default function LevelLessonsPage() {
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
                     <div
                       className={`h-2 rounded-full transition-all duration-300 ${
-                        lesson.is_completed 
-                          ? "bg-green-600 dark:bg-green-500" 
+                        lesson.is_completed
+                          ? "bg-green-600 dark:bg-green-500"
                           : "bg-blue-600 dark:bg-blue-500"
                       }`}
                       style={{ width: `${lesson.progress_percentage}%` }}
@@ -374,13 +394,16 @@ export default function LevelLessonsPage() {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      {lesson.completed_exercises}/{lesson.total_exercises} {t('completed')}
+                      {lesson.completed_exercises}/{lesson.total_exercises}{" "}
+                      {t("completed")}
                     </span>
-                    <span className={`font-medium ${
-                      lesson.is_completed 
-                        ? "text-green-600 dark:text-green-400" 
-                        : "text-blue-600 dark:text-blue-400"
-                    }`}>
+                    <span
+                      className={`font-medium ${
+                        lesson.is_completed
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-blue-600 dark:text-blue-400"
+                      }`}
+                    >
                       {lesson.progress_percentage}%
                     </span>
                   </div>
@@ -391,7 +414,7 @@ export default function LevelLessonsPage() {
               {lesson.is_completed && (
                 <div className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-green-600 dark:text-green-400">
                   <CheckCircle className="w-3 h-3" />
-                  <span>{t('completedLesson')}</span>
+                  <span>{t("completedLesson")}</span>
                 </div>
               )}
             </div>
@@ -402,12 +425,12 @@ export default function LevelLessonsPage() {
         <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
           <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
-            {t('howItWorks')}
+            {t("howItWorks")}
           </h4>
           <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>• {t('howItWorksDesc1')}</li>
-            <li>• {t('howItWorksDesc2')}</li>
-            <li>• {t('howItWorksDesc3')}</li>
+            <li>• {t("howItWorksDesc1")}</li>
+            <li>• {t("howItWorksDesc2")}</li>
+            <li>• {t("howItWorksDesc3")}</li>
           </ul>
         </div>
       </div>

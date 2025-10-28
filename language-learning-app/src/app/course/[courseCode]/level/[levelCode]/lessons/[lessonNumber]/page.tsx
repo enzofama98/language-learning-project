@@ -465,7 +465,7 @@ export default function LessonExercisesPage() {
   };
 
   const removePunctuation = (text: string): string => {
-    return text.replace(/[.,!?;:'"()[\]{}]/g, '').trim();
+    return text.replace(/[.,!?;:'"()[\]{}]/g, "").trim();
   };
 
   const validateTraduci = (exercise: Exercise): boolean => {
@@ -474,7 +474,10 @@ export default function LessonExercisesPage() {
       .map((opt) => opt.value)
       .join(" ");
 
-    return removePunctuation(userAnswer.toLowerCase()) === removePunctuation(exercise.soluzione.toLowerCase());
+    return (
+      removePunctuation(userAnswer.toLowerCase()) ===
+      removePunctuation(exercise.soluzione.toLowerCase())
+    );
   };
 
   const validateCompletaFrase = (exercise: Exercise): boolean => {
@@ -491,7 +494,10 @@ export default function LessonExercisesPage() {
       .map((opt) => opt.value)
       .join(" ");
 
-    return removePunctuation(userAnswer.toLowerCase()) === removePunctuation(exercise.soluzione.toLowerCase());
+    return (
+      removePunctuation(userAnswer.toLowerCase()) ===
+      removePunctuation(exercise.soluzione.toLowerCase())
+    );
   };
 
   const validateSelezionaCoppie = (exercise: Exercise): boolean => {
@@ -987,39 +993,36 @@ export default function LessonExercisesPage() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() =>
-                  router.push(
-                    `/course/${courseCode}/level/${levelCode}/lessons`
-                  )
-                }
-                className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
-              >
-                <ChevronLeft className="w-5 h-5" />
-                <span className="text-sm">{t("lessons")}</span>
-              </button>
+          {/* Sezione superiore: pulsanti lingua + exit */}
+          <div className="flex items-center justify-end gap-4 mb-4">
+            <LanguageSelector />
+            <button
+              onClick={() => router.push("/")}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors"
+            >
+              {t("exit")}
+            </button>
+          </div>
 
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  {courseName}
-                </h1>
-                <p className="text-sm text-gray-600">
-                  {t("level")} {levelCode} - {t("lesson")} {lessonNumber} -{" "}
-                  {t("exercise")} {currentExerciseIndex + 1} {t("of")}{" "}
-                  {currentLesson?.exercises.length || 0}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageSelector />
-              <button
-                onClick={() => router.push("/")}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md"
-              >
-                {t("exit")}
-              </button>
+          {/* Sezione inferiore: pulsante indietro + titolo + descrizione */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() =>
+                router.push(`/course/${courseCode}/level/${levelCode}/lessons`)
+              }
+              className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="text-sm">{t("lessons")}</span>
+            </button>
+
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">{courseName}</h1>
+              <p className="text-sm text-gray-600">
+                {t("level")} {levelCode} - {t("lesson")} {lessonNumber} -{" "}
+                {t("exercise")} {currentExerciseIndex + 1} {t("of")}{" "}
+                {currentLesson?.exercises.length || 0}
+              </p>
             </div>
           </div>
         </div>

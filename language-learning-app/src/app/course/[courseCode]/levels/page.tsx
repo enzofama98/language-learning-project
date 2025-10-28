@@ -4,21 +4,21 @@
 // Sostituisci il contenuto del file esistente con questo
 
 "use client";
- 
+
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { 
-  BookOpen, 
-  CheckCircle, 
-  Lock, 
-  PlayCircle, 
+import {
+  BookOpen,
+  CheckCircle,
+  Lock,
+  PlayCircle,
   ChevronRight,
   Home,
   Trophy,
   Target,
   Award,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import LanguageSelector from "@/app/components/LanguageSelector";
@@ -40,13 +40,32 @@ interface User {
 }
 
 // Colori per i livelli
-const LEVEL_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  'A1': { bg: 'bg-green-100', border: 'border-green-300', text: 'text-green-700' },
-  'A2': { bg: 'bg-blue-100', border: 'border-blue-300', text: 'text-blue-700' },
-  'B1': { bg: 'bg-yellow-100', border: 'border-yellow-300', text: 'text-yellow-700' },
-  'B2': { bg: 'bg-orange-100', border: 'border-orange-300', text: 'text-orange-700' },
-  'C1': { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-700' },
-  'C2': { bg: 'bg-red-100', border: 'border-red-300', text: 'text-red-700' }
+const LEVEL_COLORS: Record<
+  string,
+  { bg: string; border: string; text: string }
+> = {
+  A1: {
+    bg: "bg-green-100",
+    border: "border-green-300",
+    text: "text-green-700",
+  },
+  A2: { bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-700" },
+  B1: {
+    bg: "bg-yellow-100",
+    border: "border-yellow-300",
+    text: "text-yellow-700",
+  },
+  B2: {
+    bg: "bg-orange-100",
+    border: "border-orange-300",
+    text: "text-orange-700",
+  },
+  C1: {
+    bg: "bg-purple-100",
+    border: "border-purple-300",
+    text: "text-purple-700",
+  },
+  C2: { bg: "bg-red-100", border: "border-red-300", text: "text-red-700" },
 };
 
 export default function LevelsOverviewPage() {
@@ -60,18 +79,28 @@ export default function LevelsOverviewPage() {
   const [courseName, setCourseName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [overallProgress, setOverallProgress] = useState({ completed: 0, total: 0 });
+  const [overallProgress, setOverallProgress] = useState({
+    completed: 0,
+    total: 0,
+  });
 
   // Descrizioni dei livelli CEFR tradotte
   const getLevelDescription = (level: string): string => {
     switch (level) {
-      case 'A1': return t('levelA1Desc');
-      case 'A2': return t('levelA2Desc');
-      case 'B1': return t('levelB1Desc');
-      case 'B2': return t('levelB2Desc');
-      case 'C1': return t('levelC1Desc');
-      case 'C2': return t('levelC2Desc');
-      default: return '';
+      case "A1":
+        return t("levelA1Desc");
+      case "A2":
+        return t("levelA2Desc");
+      case "B1":
+        return t("levelB1Desc");
+      case "B2":
+        return t("levelB2Desc");
+      case "C1":
+        return t("levelC1Desc");
+      case "C2":
+        return t("levelC2Desc");
+      default:
+        return "";
     }
   };
 
@@ -81,7 +110,10 @@ export default function LevelsOverviewPage() {
 
   const initializePage = async () => {
     try {
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: authError,
+      } = await supabase.auth.getSession();
 
       if (authError || !session) {
         router.push("/");
@@ -95,7 +127,7 @@ export default function LevelsOverviewPage() {
 
       const hasAccess = await checkCourseAccess(session.user.id, courseCode);
       if (!hasAccess) {
-        setError(t('noAccess'));
+        setError(t("noAccess"));
         return;
       }
 
@@ -103,13 +135,16 @@ export default function LevelsOverviewPage() {
       await loadLevelsOverview(session.user.id);
     } catch (err) {
       console.error("Errore inizializzazione:", err);
-      setError(t('courseLoadError'));
+      setError(t("courseLoadError"));
     } finally {
       setLoading(false);
     }
   };
 
-  const checkCourseAccess = async (userId: string, courseCode: string): Promise<boolean> => {
+  const checkCourseAccess = async (
+    userId: string,
+    courseCode: string
+  ): Promise<boolean> => {
     try {
       const { data, error } = await supabase
         .from("codici_sbloccati")
@@ -159,56 +194,60 @@ export default function LevelsOverviewPage() {
       if (progressError) throw progressError;
 
       const completedExercises = new Set(
-        progress?.map(p => p.exercise_id) || []
+        progress?.map((p) => p.exercise_id) || []
       );
 
-      const levelMap = new Map<string, { 
-        exercises: string[], 
-        lessons: Set<number>,
-        completedCount: number 
-      }>();
+      const levelMap = new Map<
+        string,
+        {
+          exercises: string[];
+          lessons: Set<number>;
+          completedCount: number;
+        }
+      >();
 
       exercises?.forEach((ex) => {
-        const level = ex.livello || 'A1';
+        const level = ex.livello || "A1";
         if (!levelMap.has(level)) {
-          levelMap.set(level, { 
-            exercises: [], 
+          levelMap.set(level, {
+            exercises: [],
             lessons: new Set(),
-            completedCount: 0 
+            completedCount: 0,
           });
         }
-        
+
         const levelData = levelMap.get(level)!;
         levelData.exercises.push(ex.id);
         levelData.lessons.add(ex.lezione);
-        
+
         if (completedExercises.has(ex.id)) {
           levelData.completedCount++;
         }
       });
 
-      const levelOrder = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-      
+      const levelOrder = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
       let totalCompleted = 0;
       let totalExercises = 0;
       let previousLevelCompleted = true;
 
       const levelsArray: LevelInfo[] = levelOrder
-        .filter(level => levelMap.has(level))
+        .filter((level) => levelMap.has(level))
         .map((level) => {
           const data = levelMap.get(level)!;
           const totalCount = data.exercises.length;
           const completedCount = data.completedCount;
           const isCompleted = completedCount === totalCount;
-          const progressPercentage = totalCount > 0 
-            ? Math.round((completedCount / totalCount) * 100) 
-            : 0;
+          const progressPercentage =
+            totalCount > 0
+              ? Math.round((completedCount / totalCount) * 100)
+              : 0;
 
           totalCompleted += completedCount;
           totalExercises += totalCount;
 
           const isLocked = false; // Mantieni sempre sbloccato come nel codice originale
-          
+
           if (!isLocked) {
             previousLevelCompleted = progressPercentage >= 80;
           }
@@ -221,14 +260,14 @@ export default function LevelsOverviewPage() {
             is_locked: isLocked,
             is_completed: isCompleted,
             progress_percentage: progressPercentage,
-            description: getLevelDescription(level)
+            description: getLevelDescription(level),
           };
         });
 
       setLevels(levelsArray);
-      setOverallProgress({ 
-        completed: totalCompleted, 
-        total: totalExercises 
+      setOverallProgress({
+        completed: totalCompleted,
+        total: totalExercises,
       });
     } catch (err) {
       console.error("Errore caricamento livelli:", err);
@@ -245,7 +284,7 @@ export default function LevelsOverviewPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">{t('loadingLevels')}</p>
+          <p className="text-xl text-gray-600">{t("loadingLevels")}</p>
         </div>
       </div>
     );
@@ -256,47 +295,51 @@ export default function LevelsOverviewPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-6xl mb-4">⚠</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('error')}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {t("error")}
+          </h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={() => router.push("/")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md"
           >
-            {t('backToHome')}
+            {t("backToHome")}
           </button>
         </div>
       </div>
     );
   }
 
-  const overallPercentage = overallProgress.total > 0 
-    ? Math.round((overallProgress.completed / overallProgress.total) * 100)
-    : 0;
+  const overallPercentage =
+    overallProgress.total > 0
+      ? Math.round((overallProgress.completed / overallProgress.total) * 100)
+      : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {courseName}
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {t('selectLevel')}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageSelector />
-              <button
-                onClick={() => router.push("/")}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
-              >
-                <Home className="w-4 h-4" />
-                <span>{t('home')}</span>
-              </button>
-            </div>
+          {/* Sezione superiore: pulsanti lingua + home */}
+          <div className="flex items-center justify-end gap-4 mb-4">
+            <LanguageSelector />
+            <button
+              onClick={() => router.push("/")}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md transition-colors"
+            >
+              <Home className="w-4 h-4" />
+              <span>{t("home")}</span>
+            </button>
+          </div>
+
+          {/* Sezione inferiore: titolo e descrizione */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {courseName}
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {t("selectLevel")}
+            </p>
           </div>
         </div>
       </div>
@@ -307,7 +350,7 @@ export default function LevelsOverviewPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-500" />
-              {t('totalCourseProgress')}
+              {t("totalCourseProgress")}
             </h2>
             <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {overallPercentage}%
@@ -320,7 +363,9 @@ export default function LevelsOverviewPage() {
             ></div>
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            {overallProgress.completed} {t('exercisesCompleted').replace('esercizi completati', '')} {overallProgress.total} {t('exercisesCompleted')}
+            {overallProgress.completed}{" "}
+            {t("exercisesCompleted").replace("esercizi completati", "")}{" "}
+            {overallProgress.total} {t("exercisesCompleted")}
           </p>
         </div>
       </div>
@@ -329,8 +374,8 @@ export default function LevelsOverviewPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {levels.map((level) => {
-            const colors = LEVEL_COLORS[level.level] || LEVEL_COLORS['A1'];
-            
+            const colors = LEVEL_COLORS[level.level] || LEVEL_COLORS["A1"];
+
             return (
               <div
                 key={level.level}
@@ -353,7 +398,9 @@ export default function LevelsOverviewPage() {
                 {/* Level badge */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-16 h-16 rounded-lg flex items-center justify-center ${colors.bg} ${colors.border} border-2`}>
+                    <div
+                      className={`w-16 h-16 rounded-lg flex items-center justify-center ${colors.bg} ${colors.border} border-2`}
+                    >
                       <span className={`text-2xl font-bold ${colors.text}`}>
                         {level.level}
                       </span>
@@ -363,7 +410,7 @@ export default function LevelsOverviewPage() {
                         {level.level}
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {level.total_lessons} {t('lessons')}
+                        {level.total_lessons} {t("lessons")}
                       </p>
                     </div>
                   </div>
@@ -390,12 +437,12 @@ export default function LevelsOverviewPage() {
         <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
           <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
             <Target className="w-5 h-5" />
-            {t('progressionSystem')}
+            {t("progressionSystem")}
           </h4>
           <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-            <li>• {t('progressionDesc1')}</li>
-            <li>• {t('progressionDesc2')}</li>
-            <li>• {t('progressionDesc3')}</li>
+            <li>• {t("progressionDesc1")}</li>
+            <li>• {t("progressionDesc2")}</li>
+            <li>• {t("progressionDesc3")}</li>
           </ul>
         </div>
       </div>

@@ -341,17 +341,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {t("yourCourses")}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              {t("welcome")}, {user?.email}! {t("selectCourse")}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
+        <div className="mb-8 flex flex-col items-start gap-4">
+          {/* Riga superiore con lingua e pulsante */}
+          <div className="flex items-center gap-4 self-end">
             {/* Selettore lingua */}
             <LanguageSelector />
 
@@ -363,6 +355,16 @@ export default function HomePage() {
               <BookIcon className="w-5 h-5" />
               <span className="font-medium">{t("ourBooks")}</span>
             </button>
+          </div>
+
+          {/* Titolo e messaggio di benvenuto */}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {t("yourCourses")}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {t("welcome")}, {user?.email.split("@")[0]}! {t("selectCourse")}
+            </p>
           </div>
         </div>
 
