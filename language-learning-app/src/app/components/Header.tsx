@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { User, Settings, LogOut, Plus, Moon, Sun } from "lucide-react";
+import { User, Settings, LogOut, Plus, Moon, Sun, HelpCircle } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface HeaderProps {
@@ -29,6 +29,7 @@ export default function Header({
   const [showAddCourseModal, setShowAddCourseModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { t } = useTranslation();
@@ -97,86 +98,101 @@ export default function Header({
               </h1>
             </div>
 
-            {/* Menu utente */}
+            {/* Area destra header - Help e Menu utente */}
             {user && (
-              <div className="relative" ref={menuRef}>
+              <div className="flex items-center gap-3">
+                {/* Pulsante Help - sempre visibile */}
                 <button
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  onClick={() => setShowHelpModal(true)}
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title={t('help')}
                 >
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300 hidden sm:block">
-                    {user.email}
+                  <HelpCircle className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:block">
+                    {t('help')}
                   </span>
-                  <svg
-                    className={`w-4 h-4 text-gray-500 transition-transform ${
-                      isMenuOpen ? "rotate-180" : ""
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
                 </button>
 
-                {/* Dropdown menu */}
-                {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
-                    {/* User info */}
-                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {user.email}
-                      </p>
+                {/* Menu utente */}
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-white" />
                     </div>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 hidden sm:block">
+                      {user.email}
+                    </span>
+                    <svg
+                      className={`w-4 h-4 text-gray-500 transition-transform ${
+                        isMenuOpen ? "rotate-180" : ""
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
 
-                    {/* Menu items */}
-                    <div className="py-2">
-                      {showAddCourse && (
-                        <button
-                          onClick={() => {
-                            setShowAddCourseModal(true);
-                            setIsMenuOpen(false);
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
-                        >
-                          <Plus className="w-4 h-4" />
-                          <span>{t("newCourse")}</span>
-                        </button>
-                      )}
+                  {/* Dropdown menu */}
+                  {isMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2">
+                      {/* User info */}
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {user.email}
+                        </p>
+                      </div>
 
-                      {showSettings && (
-                        <button
-                          onClick={() => {
-                            setShowSettingsModal(true);
-                            setIsMenuOpen(false);
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
-                        >
-                          <Settings className="w-4 h-4" />
-                          <span>{t("settings")}</span>
-                        </button>
-                      )}
+                      {/* Menu items */}
+                      <div className="py-2">
+                        {showAddCourse && (
+                          <button
+                            onClick={() => {
+                              setShowAddCourseModal(true);
+                              setIsMenuOpen(false);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>{t("newCourse")}</span>
+                          </button>
+                        )}
 
-                      {showLogout && (
-                        <button
-                          onClick={handleLogout}
-                          className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center space-x-2"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          <span>{t("logout")}</span>
-                        </button>
-                      )}
+                        {showSettings && (
+                          <button
+                            onClick={() => {
+                              setShowSettingsModal(true);
+                              setIsMenuOpen(false);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                          >
+                            <Settings className="w-4 h-4" />
+                            <span>{t("settings")}</span>
+                          </button>
+                        )}
+
+                        {showLogout && (
+                          <button
+                            onClick={handleLogout}
+                            className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center space-x-2"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>{t("logout")}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -200,6 +216,41 @@ export default function Header({
           onThemeChange={toggleTheme}
         />
       )}
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <HelpCircle className="w-6 h-6 text-blue-600" />
+                {t('help')}
+              </h2>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-4">
+              <p>{t('helpMessage')}</p>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              >
+                {t('close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -216,59 +267,71 @@ function AddCourseModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
-    if (!courseCode.trim()) {
-      setError("Inserisci un codice valido");
+    if (!courseCode) {
+      setError("Inserisci un codice corso");
+      return;
+    }
+
+    if (!user) {
+      setError("Utente non autenticato");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Valida il codice
-      const codeResponse = await fetch("/api/validate-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: courseCode.trim().toUpperCase() }),
-      });
+      // Verifica se il corso esiste
+      const { data: courseExists, error: courseError } = await supabase
+        .from("anagrafica_codici")
+        .select("codice")
+        .eq("codice", courseCode)
+        .single();
 
-      if (!codeResponse.ok) {
-        const errorData = await codeResponse.json();
-        setError(errorData.error || "Codice non valido");
+      if (courseError || !courseExists) {
+        setError("Codice corso non valido");
         return;
       }
 
-      // Sblocca il codice
-      const unlockResponse = await fetch("/api/unlock-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?.id,
-          email: user?.email,
-          code: courseCode.trim().toUpperCase(),
-        }),
-      });
+      // Verifica se l'utente ha già questo corso
+      const { data: existingEnrollment } = await supabase
+        .from("user_courses")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("language_code", courseCode)
+        .single();
 
-      if (!unlockResponse.ok) {
-        const errorData = await unlockResponse.json();
-        setError(errorData.error || "Errore durante l'aggiunta del corso");
+      if (existingEnrollment) {
+        setError("Hai già questo corso");
         return;
       }
 
-      setSuccess("Valid Code!");
-      setCourseCode("");
+      // Aggiungi il corso all'utente
+      const { error: insertError } = await supabase
+        .from("user_courses")
+        .insert({
+          user_id: user.id,
+          language_code: courseCode,
+        });
 
-      // Ricarica la pagina dopo un breve delay
+      if (insertError) {
+        setError("Errore durante l'aggiunta del corso");
+        return;
+      }
+
+      setSuccess("Corso aggiunto con successo!");
       setTimeout(() => {
-        window.location.reload();
+        router.refresh();
+        onClose();
       }, 1500);
     } catch (err) {
-      setError("Errore di connessione. Riprova.");
+      setError("Errore durante l'aggiunta del corso");
     } finally {
       setLoading(false);
     }

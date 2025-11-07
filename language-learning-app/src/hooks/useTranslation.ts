@@ -882,6 +882,16 @@ export const translations: Translations = {
   fr: 'Nom d\'utilisateur',
   de: 'Benutzername'
 },
+'help': {
+  it: 'Aiuto',
+  fr: 'Aide',
+  de: 'Hilfe'
+},
+'helpMessage': {
+  it: 'Se riscontri un problema o desideri inviarci suggerimenti per migliorare i nostri contenuti, scrivici al seguente indirizzo e-mail: 10minlanguagehub@gmail.com',
+  fr: 'Si vous rencontrez un problème ou avez des suggestions pour améliorer nos contenus, veuillez nous écrire à l\'adresse suivante : 10minlanguagehub@gmail.com',
+  de: 'Wenn Sie ein Problem feststellen oder Anregungen zur Verbesserung unserer Inhalte haben, schreiben Sie uns bitte an 10minlanguagehub@gmail.com'
+},
 'usernamePlaceholder': {
   it: 'Il tuo nome utente',
   fr: 'Votre nom d\'utilisateur',
