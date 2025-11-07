@@ -108,7 +108,7 @@ export default function Header({
                   title={t('help')}
                 >
                   <HelpCircle className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300 hidden lg:block">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     {t('help')}
                   </span>
                 </button>
