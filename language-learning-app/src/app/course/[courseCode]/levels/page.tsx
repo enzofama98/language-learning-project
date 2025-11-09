@@ -104,6 +104,10 @@ export default function LevelsOverviewPage() {
     }
   };
 
+  const COURSES_WITH_VIDEOS = ["ENG4ITA2", "ENG4FRA1", "ESP4ITA4"];
+
+  const hasVideos = COURSES_WITH_VIDEOS.includes(courseCode);
+
   useEffect(() => {
     initializePage();
   }, [courseCode]);
@@ -279,6 +283,10 @@ export default function LevelsOverviewPage() {
     router.push(`/course/${courseCode}/level/${level.level}/lessons`);
   };
 
+  const handleVideolezioniClick = () => {
+    router.push(`/course/${courseCode}/video`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -431,6 +439,51 @@ export default function LevelsOverviewPage() {
               </div>
             );
           })}
+          {hasVideos && (
+            <div
+              key="videolezioni"
+              onClick={() => handleVideolezioniClick()}
+              className={`relative bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 p-6 transition-all duration-200 ${
+                false //level.is_locked
+                  ? "border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed"
+                  : false //level.is_completed
+                  ? "border-green-300 dark:border-green-700 hover:border-green-400 dark:hover:border-green-600 hover:shadow-md cursor-pointer"
+                  : "border-blue-200 dark:border-blue-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md cursor-pointer"
+              }`}
+            >
+              {/* Lock overlay */}
+              {
+                //level.is_locked
+                false && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-900 bg-opacity-50 dark:bg-opacity-50 rounded-lg">
+                    <Lock className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                  </div>
+                )
+              }
+
+              {/* Level badge */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Videolezioni
+                    </h3>
+                  </div>
+                </div>
+
+                <Award className="w-6 h-6 text-yellow-500" />
+              </div>
+
+              {/* Description
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {level.description}
+                </p> */}
+
+              {/* Navigation arrow */}
+
+              <ChevronRight className="absolute top-1/2 right-4 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+            </div>
+          )}
         </div>
 
         {/* Info message */}
