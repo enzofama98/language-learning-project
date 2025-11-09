@@ -6,7 +6,15 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { User, Settings, LogOut, Plus, Moon, Sun, HelpCircle } from "lucide-react";
+import {
+  User,
+  Settings,
+  LogOut,
+  Plus,
+  Moon,
+  Sun,
+  HelpCircle,
+} from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface HeaderProps {
@@ -105,11 +113,11 @@ export default function Header({
                 <button
                   onClick={() => setShowHelpModal(true)}
                   className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  title={t('help')}
+                  title={t("help")}
                 >
                   <HelpCircle className="w-6 h-6 text-gray-600 dark:text-gray-300" />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {t('help')}
+                    {t("help")}
                   </span>
                 </button>
 
@@ -224,20 +232,30 @@ export default function Header({
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <HelpCircle className="w-6 h-6 text-blue-600" />
-                {t('help')}
+                {t("help")}
               </h2>
               <button
                 onClick={() => setShowHelpModal(false)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
 
             <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-4">
-              <p>{t('helpMessage')}</p>
+              <p>{t("helpMessage")}</p>
             </div>
 
             <div className="mt-6 flex justify-end">
@@ -245,7 +263,7 @@ export default function Header({
                 onClick={() => setShowHelpModal(false)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
               >
-                {t('close')}
+                {t("close")}
               </button>
             </div>
           </div>
@@ -301,7 +319,7 @@ function AddCourseModal({
 
       // Verifica se l'utente ha già questo corso
       const { data: existingEnrollment } = await supabase
-        .from("user_courses")
+        .from("codici_sbloccati")
         .select("*")
         .eq("user_id", user.id)
         .eq("language_code", courseCode)
@@ -314,7 +332,7 @@ function AddCourseModal({
 
       // Aggiungi il corso all'utente
       const { error: insertError } = await supabase
-        .from("user_courses")
+        .from("codici_sbloccati")
         .insert({
           user_id: user.id,
           language_code: courseCode,
