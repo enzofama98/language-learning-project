@@ -870,21 +870,33 @@ export default function LessonExercisesPage() {
     );
   };
 
-  const renderActionButtons = () => {
-    const exerciseCompleted = isCurrentExerciseCompleted();
-    const attempts = getAttemptsForCurrentExercise();
-    const maxAttemptsReached = attempts >= 3;
-    const currentLesson = lessons[currentLessonIndex];
+const renderActionButtons = () => {
+  const exerciseCompleted = isCurrentExerciseCompleted();
+  const attempts = getAttemptsForCurrentExercise();
+  const maxAttemptsReached = attempts >= 3;
+  const currentLesson = lessons[currentLessonIndex];
+  const isDevMode = 'true';
 
-    return (
-      <div className="flex justify-between items-center">
-        <button
-          onClick={goToPreviousExercise}
-          disabled={currentLessonIndex === 0 && currentExerciseIndex === 0}
-          className="text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          ← {t("previous")}
-        </button>
+  return (
+    <div className="flex justify-between items-center">
+      <button
+        onClick={goToPreviousExercise}
+        disabled={currentLessonIndex === 0 && currentExerciseIndex === 0}
+        className="text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        ← {t("previous")}
+      </button>
+
+      <div className="flex gap-3">
+        {/* Pulsante Skip - SOLO IN DEV MODE */}
+        {isDevMode && (
+          <button
+            onClick={goToNextExercise}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-2 rounded-md font-medium shadow-sm"
+          >
+            ⏭️ Skip
+          </button>
+        )}
 
         {!showResult ? (
           <button
@@ -895,7 +907,7 @@ export default function LessonExercisesPage() {
             {t("verify")}
           </button>
         ) : (
-          <div className="flex gap-3">
+          <>
             {!isCorrect && !maxAttemptsReached && (
               <button
                 onClick={handleRetryExercise}
@@ -915,20 +927,21 @@ export default function LessonExercisesPage() {
                   : t("next")}
               </button>
             )}
-          </div>
-        )}
-
-        {exerciseCompleted && !showResult && canMoveToNext() && (
-          <button
-            onClick={goToNextExercise}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
-          >
-            {t("next")}
-          </button>
+          </>
         )}
       </div>
-    );
-  };
+
+      {exerciseCompleted && !showResult && canMoveToNext() && (
+        <button
+          onClick={goToNextExercise}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
+        >
+          {t("next")}
+        </button>
+      )}
+    </div>
+  );
+};
 
   if (loading) {
     return (

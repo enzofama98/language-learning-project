@@ -178,7 +178,7 @@ export default function LessonsOverviewPage() {
           totalExercises += totalCount;
 
           // Una lezione è bloccata se la precedente non è completata
-          const isLocked = !previousLessonCompleted;
+          const isLocked = false //!previousLessonCompleted;
           
           // Aggiorna lo stato per la prossima iterazione
           if (!isLocked) {

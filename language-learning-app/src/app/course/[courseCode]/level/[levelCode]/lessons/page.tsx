@@ -184,7 +184,7 @@ export default function LevelLessonsPage() {
           totalCompleted += completedCount;
           totalExercises += totalCount;
 
-          const isLocked = !previousLessonCompleted;
+          const isLocked = false// !previousLessonCompleted;
 
           if (!isLocked) {
             previousLessonCompleted = isCompleted;
